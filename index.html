@@ -40,6 +40,7 @@
       [...parsed.querySelectorAll('script[src]')].forEach(s=>{
         const src=s.getAttribute('src')||'';
         if(src.includes('action=bridge') || src.includes('arlab-v683-bridge') || src.includes('arlab-v665-install') || src.includes('arlab-v683-installer') || src.includes('arlab-v620-bundle-guard.js') || src.includes('arlab-v671-refresh-memory-guard.js')) s.remove();
+        else s.setAttribute('crossorigin','anonymous');
       });
 
       const diag=parsed.createElement('script');
@@ -48,8 +49,16 @@
 
       const cloud=parsed.createElement('script');
       cloud.textContent=bridge;
+      const compat=parsed.createElement('script');
+      compat.textContent='var renderAvailabilityV83;';
       const main=[...parsed.querySelectorAll('script[src]')].find(s=>(s.getAttribute('src')||'').includes('arlab-v620-app.bundle.js'));
-      if(main) main.parentNode.insertBefore(cloud,main); else parsed.head.appendChild(cloud);
+      if(main){
+        main.parentNode.insertBefore(cloud,main);
+        main.parentNode.insertBefore(compat,main);
+      }else{
+        parsed.head.appendChild(cloud);
+        parsed.head.appendChild(compat);
+      }
 
       msg.textContent='Iniciando ARLAB…';
       const html='<!doctype html>\n'+parsed.documentElement.outerHTML;
