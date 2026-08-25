@@ -8,7 +8,11 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Check unique V683 URL
+      - name: Check XHTML endpoint
         run: |
-          set -x
-          curl -sSIL --max-time 20 https://abalada1.github.io/arlab-performance-hub/v683-20260825-1924.html
+          set -euxo pipefail
+          URL="https://xnlkjkrkkehplsbbziil.supabase.co/functions/v1/arlab-v683-xhtml"
+          curl -sSIL --max-time 20 "$URL"
+          CT=$(curl -sSI --max-time 20 "$URL" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print tolower($2)}')
+          echo "CONTENT_TYPE=$CT"
+          echo "$CT" | grep -q "application/xhtml+xml"
