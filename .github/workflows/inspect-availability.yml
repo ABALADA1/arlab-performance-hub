@@ -1,0 +1,20 @@
+name: Inspect availability renderer
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect availability functions
+        shell: bash
+        run: |
+          ROOT="https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v683-static/"
+          curl -fsSL "${ROOT}arlab-v620-app.bundle.js?v=6810" -o app.js
+          echo '=== renderAvailability occurrences ==='
+          grep -n -E "renderAvailability|AvailabilityV[0-9]+" app.js | head -n 120 || true
+          echo '=== context around line 14031 ==='
+          nl -ba app.js | sed -n '14000,14060p'
