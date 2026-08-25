@@ -19,6 +19,7 @@
     const ROOT='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v683-static/';
     const BRIDGE='https://xnlkjkrkkehplsbbziil.supabase.co/functions/v1/arlab-v683-bridge';
     const msg=document.getElementById('msg');
+    if(new URLSearchParams(location.search).get('resetkey')==='1') sessionStorage.removeItem('arlabCloudKey');
     const fail=(e)=>{msg.className='err';msg.textContent='Error al abrir ARLAB:\n'+String(e&&e.message?e.message:e);console.error(e)};
     try{
       msg.textContent='Descargando interfaz…';
