@@ -50,7 +50,7 @@
       const cloud=parsed.createElement('script');
       cloud.textContent=bridge;
       const compat=parsed.createElement('script');
-      compat.textContent='var renderAvailabilityV83, fixMacro, scheduleMacro;';
+      compat.textContent='var renderAvailabilityV83, fixMacro, scheduleMacro, fixMacroV143, scheduleMacroV143;';
       const main=[...parsed.querySelectorAll('script[src]')].find(s=>(s.getAttribute('src')||'').includes('arlab-v620-app.bundle.js'));
       if(main){
         main.parentNode.insertBefore(cloud,main);
