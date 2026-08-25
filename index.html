@@ -29,7 +29,11 @@
       if(!hr.ok) throw new Error('Interfaz HTTP '+hr.status);
       if(!br.ok) throw new Error('Puente cloud HTTP '+br.status);
       const source=await hr.text();
-      const bridge=await br.text();
+      let bridge=await br.text();
+      bridge=bridge.replace(
+        "if(u.origin!==location.origin)return nativeFetch(input,init);",
+        "if(u.href.startsWith(EDGE)){const h=new Headers(init.headers||(typeof input!=='string'?input.headers:undefined));if(KEY)h.set('x-arlab-key',KEY);return nativeFetch(input,{...init,headers:h});}if(u.origin!==location.origin)return nativeFetch(input,init);"
+      );
       msg.textContent='Preparando V683…';
 
       const parsed=new DOMParser().parseFromString(source,'text/html');
@@ -51,10 +55,10 @@
       cloud.textContent=bridge;
       const compat=parsed.createElement('script');
       compat.textContent='var renderAvailabilityV83, fixMacro, scheduleMacro, fixMacroV143, scheduleMacroV143;';
-      const main=[...parsed.querySelectorAll('script[src]')].find(s=>(s.getAttribute('src')||'').includes('arlab-v620-app.bundle.js'));
-      if(main){
-        main.parentNode.insertBefore(cloud,main);
-        main.parentNode.insertBefore(compat,main);
+      const firstExternal=parsed.querySelector('script[src]');
+      if(firstExternal){
+        firstExternal.parentNode.insertBefore(cloud,firstExternal);
+        firstExternal.parentNode.insertBefore(compat,firstExternal);
       }else{
         parsed.head.appendChild(cloud);
         parsed.head.appendChild(compat);
