@@ -1,0 +1,14 @@
+name: Check ARLAB Public URL
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check unique V683 URL
+        run: |
+          set -x
+          curl -sSIL --max-time 20 https://abalada1.github.io/arlab-performance-hub/v683-20260825-1924.html
