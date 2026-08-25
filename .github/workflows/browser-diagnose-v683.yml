@@ -1,0 +1,57 @@
+name: Browser Diagnose V683
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare local loader with stub cloud bridge
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          p='index.html'
+          s=open(p,encoding='utf-8').read()
+          s=s.replace("const BRIDGE='https://xnlkjkrkkehplsbbziil.supabase.co/functions/v1/arlab-v683-bridge';","const BRIDGE='http://127.0.0.1:8080/bridge.js';")
+          open('test.html','w',encoding='utf-8').write(s)
+          PY
+          cat > bridge.js <<'JS'
+          (()=>{
+            const nativeFetch=window.fetch.bind(window);
+            const resp=(o,s=200)=>new Response(JSON.stringify(o),{status:s,headers:{'content-type':'application/json'}});
+            window.fetch=async function(input,init={}){
+              let u; try{u=new URL(typeof input==='string'?input:input.url,location.href)}catch{return nativeFetch(input,init)}
+              const method=(init.method||(typeof input!=='string'&&input.method)||'GET').toUpperCase();
+              if(u.origin===location.origin && u.pathname==='/api/state'){
+                if(method==='GET') return new Response('{}',{headers:{'content-type':'application/json'}});
+                return resp({ok:true});
+              }
+              if(u.origin===location.origin && u.pathname==='/api/health') return resp({ok:true});
+              if(u.origin===location.origin && u.pathname.startsWith('/api/')) return resp({error:'stub'},404);
+              return nativeFetch(input,init);
+            };
+            try{if(navigator.serviceWorker&&navigator.serviceWorker.register)navigator.serviceWorker.register=async()=>({scope:location.href})}catch{}
+          })();
+          JS
+      - name: Launch Chrome and capture console
+        shell: bash
+        run: |
+          set +e
+          python3 -m http.server 8080 >/tmp/server.log 2>&1 &
+          sleep 1
+          CHROME=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
+          echo "CHROME=$CHROME"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --enable-logging=stderr --v=0 --virtual-time-budget=20000 --dump-dom http://127.0.0.1:8080/test.html > /tmp/dom.txt 2>/tmp/chrome.log
+          rc=$?
+          echo "CHROME_RC=$rc"
+          echo '=== CONSOLE/ERROR LINES ==='
+          grep -Ei "console|error|uncaught|exception|failed|referenceerror|typeerror|syntaxerror" /tmp/chrome.log | tail -n 200 || true
+          echo '=== DOM SPLASH/ERROR ==='
+          grep -Eo "Error interno:[^<]*|Abriendo ARLAB[^<]*|Cargando[^<]*" /tmp/dom.txt | head -n 30 || true
+          echo '=== LAST CHROME LOG ==='
+          tail -n 100 /tmp/chrome.log || true
+          exit 0
