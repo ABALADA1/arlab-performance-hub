@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ARLAB V683 Cloud</title>
+  <style>
+    html,body{margin:0;height:100%;font-family:Inter,system-ui,Segoe UI,Arial;background:#f4f7fb}
+    #boot{position:fixed;inset:0;display:grid;place-items:center;color:#17324f;z-index:999999}
+    .card{background:#fff;border:1px solid #dfe7f1;border-radius:16px;padding:26px 30px;box-shadow:0 12px 36px rgba(18,54,93,.08);text-align:center;min-width:300px}
+    .mark{width:58px;height:58px;border-radius:18px;background:#3278f2;color:#fff;display:grid;place-items:center;margin:0 auto 14px;font-size:30px;font-weight:800}
+    .card b{display:block;font-size:18px;margin-bottom:8px}.card span{font-size:12px;color:#718197}.err{color:#c43f46!important;white-space:pre-wrap;max-width:720px}
+  </style>
+</head>
+<body>
+  <div id="boot"><div class="card"><div class="mark">A</div><b>Abriendo ARLAB V683</b><span id="msg">Cargando la aplicación cloud…</span></div></div>
+  <script>
+  (async()=>{
+    const ROOT='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v683-static/';
+    const BRIDGE='https://xnlkjkrkkehplsbbziil.supabase.co/functions/v1/arlab-v683-bridge';
+    const msg=document.getElementById('msg');
+    if(new URLSearchParams(location.search).get('resetkey')==='1') sessionStorage.removeItem('arlabCloudKey');
+    const fail=(e)=>{msg.className='err';msg.textContent='Error al abrir ARLAB:\n'+String(e&&e.message?e.message:e);console.error(e)};
+    try{
+      msg.textContent='Descargando interfaz…';
+      const [hr,br]=await Promise.all([
+        fetch(ROOT+'index.html?v='+Date.now(),{cache:'no-store'}),
+        fetch(BRIDGE+'?v='+Date.now(),{cache:'no-store'})
+      ]);
+      if(!hr.ok) throw new Error('Interfaz HTTP '+hr.status);
+      if(!br.ok) throw new Error('Puente cloud HTTP '+br.status);
+      const source=await hr.text();
+      let bridge=await br.text();
+      bridge=bridge.replace("if(u.origin!==location.origin)return nativeFetch(input,init);","if(u.href.startsWith(EDGE)){const h=new Headers(init.headers||(typeof input!=='string'?input.headers:undefined));if(KEY)h.set('x-arlab-key',KEY);return nativeFetch(input,{...init,headers:h});}if(u.origin!==location.origin)return nativeFetch(input,init);");
+      msg.textContent='Preparando V683…';
+      const parsed=new DOMParser().parseFromString(source,'text/html');
+      const oldBase=parsed.querySelector('base');
+      if(oldBase) oldBase.href=ROOT; else {const b=parsed.createElement('base');b.href=ROOT;parsed.head.prepend(b)}
+      [...parsed.querySelectorAll('script[src]')].forEach(s=>{const src=s.getAttribute('src')||'';if(src.includes('action=bridge')||src.includes('arlab-v683-bridge')||src.includes('arlab-v665-install')||src.includes('arlab-v683-installer')||src.includes('arlab-v620-bundle-guard.js')||src.includes('arlab-v671-refresh-memory-guard.js'))s.remove();else s.setAttribute('crossorigin','anonymous')});
+      const diag=parsed.createElement('script');diag.textContent="window.addEventListener('error',function(e){console.error('ARLAB runtime',e.error||e.message);var x=document.getElementById('arlab-fast-splash');if(x){var s=x.querySelector('span');if(s)s.textContent='Error interno: '+(e.message||'JavaScript');}});window.addEventListener('unhandledrejection',function(e){console.error('ARLAB promise',e.reason);});";parsed.head.appendChild(diag);
+      const cloud=parsed.createElement('script');cloud.textContent=bridge;const compat=parsed.createElement('script');compat.textContent='var renderAvailabilityV83, fixMacro, scheduleMacro, fixMacroV143, scheduleMacroV143;';const firstExternal=parsed.querySelector('script[src]');if(firstExternal){firstExternal.parentNode.insertBefore(cloud,firstExternal);firstExternal.parentNode.insertBefore(compat,firstExternal)}else{parsed.head.appendChild(cloud);parsed.head.appendChild(compat)}
+      msg.textContent='Iniciando ARLAB…';document.open();document.write('<!doctype html>\n'+parsed.documentElement.outerHTML);document.close();
+    }catch(e){fail(e)}
+  })();
+  </script>
+</body>
+</html>
