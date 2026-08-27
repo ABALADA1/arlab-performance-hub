@@ -10,9 +10,6 @@ permissions:
   pages: write
   id-token: write
 
-env:
-  SITE_URL: https://abalada1.github.io/arlab-performance-hub/v683-20260825-1924.html
-
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -26,25 +23,102 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Build ARLAB V710 static site
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf site
+          mkdir -p site/v710
+          cp -R checkin site/checkin
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, gzip, re
+
+          repo = Path('.')
+          out = Path('site')
+          sb = 'https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
+          bridge = 'https://xnlkjkrkkehplsbbziil.supabase.co/functions/v1/arlab-v699-bridge'
+
+          def unpack(path):
+              raw = Path(path).read_text(encoding='utf-8').strip()
+              return gzip.decompress(base64.b64decode(raw)).decode('utf-8')
+
+          html = unpack('v710/chunk1.txt')
+          css = unpack('v710/chunk2.txt')
+          js = unpack('v710/chunk3a.txt') + unpack('v710/chunk3b.txt')
+
+          # El bridge cloud debe ejecutarse antes de la aplicación para que /api/state,
+          # GPS y multimedia sigan apuntando al slot v699-live de aplicación_equipo.
+          cloud = (
+              f'<script src="{bridge}?release=710"></script>\n'
+              '<script>window.ARLAB_CLOUD_RELEASE="V710";'
+              'window.ARLAB_PLAYER_PORTAL="/arlab-performance-hub/checkin/";</script>\n'
+          )
+          html = html.replace('<head>', '<head>\n' + cloud, 1)
+
+          # Quitamos los dos guards locales que en cloud interfieren con el puente remoto.
+          html = re.sub(r'\s*<script[^>]+src=["\'][^"\']*arlab-v620-bundle-guard\.js[^"\']*["\'][^>]*></script>', '', html, flags=re.I)
+          html = re.sub(r'\s*<script[^>]+src=["\'][^"\']*arlab-v671-refresh-memory-guard\.js[^"\']*["\'][^>]*></script>', '', html, flags=re.I)
+
+          # V701-V709 se sirven como dos archivos normales generados en esta publicación.
+          html = re.sub(r'\s*<link[^>]+href=["\']arlab-v70[1-9][^"\']*\.css[^"\']*["\'][^>]*>', '', html, flags=re.I)
+          html = re.sub(r'\s*<script[^>]+src=["\']arlab-v70[1-9][^"\']*\.js[^"\']*["\'][^>]*></script>', '', html, flags=re.I)
+          html = html.replace('</head>', '  <link rel="stylesheet" href="v710/arlab-v710.css?v=7102">\n</head>', 1)
+          html = html.replace('</body>', '  <script src="v710/arlab-v710.js?v=7102" defer></script>\n</body>', 1)
+
+          # Todo lo heredado V699 se sirve desde el bucket estático que ya contiene
+          # la aplicación completa. No usamos <base>, para que /checkin y V710 sigan locales.
+          def abs_asset(m):
+              attr, name, query = m.group(1), m.group(2), m.group(3) or ''
+              return f'{attr}{sb}{name}{query}"'
+
+          html = re.sub(
+              r'((?:src|href)=")((?:arlab|gps|macro|micro|strength|tests|tindeq|spro|wimu)[^"?]*\.(?:js|css))(\?[^\"]*)?"',
+              abs_asset,
+              html,
+              flags=re.I,
+          )
+
+          # Si algo excepcionalmente tarda demasiado, mostramos un aviso en lugar de
+          # dejar al usuario con una pantalla de carga infinita.
+          watchdog = '''<script>
+          setTimeout(function(){
+            var s=document.getElementById('arlab-fast-splash');
+            if(s && !s.classList.contains('hide')){
+              var t=s.querySelector('span');
+              if(t)t.textContent='La aplicación tarda más de lo normal. Recarga la página si no aparece en unos segundos.';
+            }
+          },18000);
+          </script>'''
+          html = html.replace('</body>', watchdog + '\n</body>', 1)
+
+          (out / 'index.html').write_text(html, encoding='utf-8')
+          (out / 'v710' / 'arlab-v710.css').write_text(css, encoding='utf-8')
+          (out / 'v710' / 'arlab-v710.js').write_text(js, encoding='utf-8')
+
+          print('V710 preparada:', len(html), 'HTML,', len(css), 'CSS,', len(js), 'JS')
+          PY
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: site
+
       - name: Deploy Pages
         id: deployment
         uses: actions/deploy-pages@v4
-      - name: Diagnose Pages
-        env:
-          GH_TOKEN: ${{ github.token }}
+
+      - name: Verify published entry points
+        shell: bash
         run: |
-          echo "DEPLOYED_PAGE_URL=${{ steps.deployment.outputs.page_url }}"
-          echo "--- PAGES CONFIG ---"
-          curl -sS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" "https://api.github.com/repos/$GITHUB_REPOSITORY/pages" || true
-          echo
-          echo "--- PUBLIC HEADERS UNIQUE ROUTE ---"
+          set -e
           sleep 8
-          curl -sSIL "$SITE_URL" || true
+          curl -fsSIL "${{ steps.deployment.outputs.page_url }}" | head -20
+          curl -fsSIL "${{ steps.deployment.outputs.page_url }}checkin/" | head -20
