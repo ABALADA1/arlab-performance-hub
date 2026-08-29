@@ -1,1 +1,1 @@
-debug session patch 2026-08-30
+apply stable player session patch 2026-08-30
