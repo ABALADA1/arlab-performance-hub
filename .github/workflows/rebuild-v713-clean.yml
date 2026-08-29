@@ -57,12 +57,18 @@ jobs:
           root.mkdir(exist_ok=True)
           for name in names:
               (root/f'{name}.b64').write_text(out[name], encoding='utf-8')
-          (root/'p1-repaired.b64').write_text(out['p1'], encoding='utf-8')
 
-          # Production still has an old raw-length guard for p1 (=14860).
-          # Keep the clean Base64 intact and add only internal ASCII whitespace,
-          # which Node's Base64 decoder ignores, so the decoded gzip is unchanged.
           p1 = out['p1']
+          # Production still enforces the legacy raw p1 length (=14860).
+          # Internal spaces are ignored by Node Base64 decoding, so gzip bytes remain identical.
+          pad_total = 14860 - len(p1)
+          mid = len(p1)//2
+          compat = p1[:mid] + (' ' * pad_total) + p1[mid:]
+          assert len(compat) == 14860
+          assert ''.join(compat.split()) == p1
+          assert gzip.decompress(base64.b64decode(compat)).decode('utf-8') == chunks[1]
+          (root/'p1-repaired.b64').write_text(compat, encoding='utf-8')
+
           q, r = divmod(len(p1), 6)
           pos = 0
           pads = [1489, 1489, 1489, 1489, 1488, 1488]
@@ -70,19 +76,18 @@ jobs:
               n = q + (1 if i < r else 0)
               piece = p1[pos:pos+n]
               pos += n
-              mid = len(piece)//2
-              wrapped = piece[:mid] + (' ' * pads[i]) + piece[mid:]
+              m = len(piece)//2
+              wrapped = piece[:m] + (' ' * pads[i]) + piece[m:]
               (root/f'p1s{i}.txt').write_text(wrapped, encoding='utf-8')
           joined_p1 = ''.join((root/f'p1s{i}.txt').read_text().strip() for i in range(6))
-          assert len(joined_p1) == 14860, len(joined_p1)
+          assert len(joined_p1) == 14860
           clean_p1 = ''.join(joined_p1.split())
           assert clean_p1 == p1
-          assert gzip.decompress(base64.b64decode(joined_p1)).decode('utf-8') == chunks[1]
-          print('P1_COMPAT', len(joined_p1), len(clean_p1))
+          print('P1_COMPAT', len(compat), len(p1))
 
           logical = [
               (root/'p0.b64').read_text().strip(),
-              clean_p1,
+              p1,
               *[(root/f'r{i}.b64').read_text().strip() for i in range(5)]
           ]
           reconstructed = ''.join(gzip.decompress(base64.b64decode(x, validate=True)).decode('utf-8') for x in logical)
@@ -94,5 +99,5 @@ jobs:
           git config user.name 'ARLAB V713 Builder'
           git config user.email 'actions@users.noreply.github.com'
           git add player-v713-source/src01.txt player-v713/p0.b64 player-v713/p1.b64 player-v713/p1-repaired.b64 player-v713/p1s0.txt player-v713/p1s1.txt player-v713/p1s2.txt player-v713/p1s3.txt player-v713/p1s4.txt player-v713/p1s5.txt player-v713/r0.b64 player-v713/r1.b64 player-v713/r2.b64 player-v713/r3.b64 player-v713/r4.b64
-          git commit -m 'Rebuild V713 bundles with production-compatible p1' || true
+          git commit -m 'Rebuild V713 production compatibility bundle' || true
           git push
