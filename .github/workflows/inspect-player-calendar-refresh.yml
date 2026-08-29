@@ -1,0 +1,34 @@
+name: Inspect Player Calendar Refresh
+on:
+  push:
+    paths:
+      - 'player-v713/calendar-refresh-debug-trigger.txt'
+permissions:
+  contents: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect calendar data flow
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64,gzip,re
+          root=Path('player-v713'); names=['p0','p1','r0','r1','r2','r3','r4']
+          html=''.join(gzip.decompress(base64.b64decode(''.join((root/f'{n}.b64').read_text().split()))).decode('utf-8') for n in names)
+          out=[]
+          for key in ['refreshPortalData','function renderCalendar','model.calendar','function renderPage','function go','currentView','activeView','page=','view=']:
+              out.append('\n===== '+key+' =====\n')
+              for m in list(re.finditer(re.escape(key),html))[:8]:
+                  a=max(0,m.start()-900); b=min(len(html),m.end()+1800)
+                  out.append(html[a:b])
+                  out.append('\n---\n')
+          (root/'calendar-refresh-debug.txt').write_text(''.join(out))
+          print('html',len(html),'calendar occurrences',html.count('model.calendar'))
+          PY
+          git config user.name 'ARLAB Debug'
+          git config user.email 'actions@users.noreply.github.com'
+          git add player-v713/calendar-refresh-debug.txt
+          git commit -m 'Inspect player calendar refresh flow' || true
+          git push
