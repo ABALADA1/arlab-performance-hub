@@ -55,18 +55,19 @@ jobs:
 
           root = Path('player-v713')
           root.mkdir(exist_ok=True)
-          for name in names:
+          for name in ('p0','r0','r1','r2','r3','r4'):
               (root/f'{name}.b64').write_text(out[name], encoding='utf-8')
 
+          # Legacy production checks p1 raw length as 14860. Add only internal
+          # whitespace; Node Base64 ignores it, so the decoded gzip is identical.
           p1 = out['p1']
-          # Production still enforces the legacy raw p1 length (=14860).
-          # Internal spaces are ignored by Node Base64 decoding, so gzip bytes remain identical.
           pad_total = 14860 - len(p1)
           mid = len(p1)//2
           compat = p1[:mid] + (' ' * pad_total) + p1[mid:]
           assert len(compat) == 14860
           assert ''.join(compat.split()) == p1
           assert gzip.decompress(base64.b64decode(compat)).decode('utf-8') == chunks[1]
+          (root/'p1.b64').write_text(compat, encoding='utf-8')
           (root/'p1-repaired.b64').write_text(compat, encoding='utf-8')
 
           q, r = divmod(len(p1), 6)
@@ -81,15 +82,10 @@ jobs:
               (root/f'p1s{i}.txt').write_text(wrapped, encoding='utf-8')
           joined_p1 = ''.join((root/f'p1s{i}.txt').read_text().strip() for i in range(6))
           assert len(joined_p1) == 14860
-          clean_p1 = ''.join(joined_p1.split())
-          assert clean_p1 == p1
+          assert ''.join(joined_p1.split()) == p1
           print('P1_COMPAT', len(compat), len(p1))
 
-          logical = [
-              (root/'p0.b64').read_text().strip(),
-              p1,
-              *[(root/f'r{i}.b64').read_text().strip() for i in range(5)]
-          ]
+          logical = [out['p0'], p1, out['r0'], out['r1'], out['r2'], out['r3'], out['r4']]
           reconstructed = ''.join(gzip.decompress(base64.b64decode(x, validate=True)).decode('utf-8') for x in logical)
           assert reconstructed == html
           assert len(reconstructed) == 113139
@@ -99,5 +95,5 @@ jobs:
           git config user.name 'ARLAB V713 Builder'
           git config user.email 'actions@users.noreply.github.com'
           git add player-v713-source/src01.txt player-v713/p0.b64 player-v713/p1.b64 player-v713/p1-repaired.b64 player-v713/p1s0.txt player-v713/p1s1.txt player-v713/p1s2.txt player-v713/p1s3.txt player-v713/p1s4.txt player-v713/p1s5.txt player-v713/r0.b64 player-v713/r1.b64 player-v713/r2.b64 player-v713/r3.b64 player-v713/r4.b64
-          git commit -m 'Rebuild V713 production compatibility bundle' || true
+          git commit -m 'Rebuild V713 production p1 bundle' || true
           git push
