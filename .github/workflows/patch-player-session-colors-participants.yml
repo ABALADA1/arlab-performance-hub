@@ -24,38 +24,33 @@ jobs:
           assert 'function showCalEvent(id)' in html
 
           css="""
-.session-participants{margin:0 0 13px;padding:10px 11px;border:1px solid #e2eaf3;border-radius:11px;background:#f8fbfe}.session-participants-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.session-participants-head b{font-size:10px;color:#35536e}.session-participants-head span{font-size:9px;color:#7b8fa3}.participant-chips{display:flex;flex-wrap:wrap;gap:6px}.participant-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:999px;background:#fff;border:1px solid #dce6ef;font-size:9px;font-weight:850;color:#35536e}.participant-chip.me{background:#e9f3ff;border-color:#bcd8f5;color:#0b57a4}.participant-dot{width:7px;height:7px;border-radius:50%;background:var(--pc,#5f7f9f);flex:0 0 auto}.event-chip{border-left:5px solid var(--ec,#5f7f9f)!important}.cal-detail-participants{margin-top:10px}.cal-detail-participants b{display:block;font-size:10px;margin-bottom:6px}.session summary{position:relative}.session-colorbar{width:8px;height:34px;border-radius:99px;background:var(--sc,#5f7f9f);flex:0 0 auto}
+.session-participants{margin:0 0 13px;padding:10px 11px;border:1px solid #e2eaf3;border-radius:11px;background:#f8fbfe}.session-participants-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.session-participants-head b{font-size:10px;color:#35536e}.session-participants-head span{font-size:9px;color:#7b8fa3}.participant-chips{display:flex;flex-wrap:wrap;gap:6px}.participant-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:999px;background:#fff;border:1px solid #dce6ef;font-size:9px;font-weight:850;color:#35536e}.participant-chip.me{background:#e9f3ff;border-color:#bcd8f5;color:#0b57a4}.participant-dot{width:7px;height:7px;border-radius:50%;background:var(--pc,#5f7f9f);flex:0 0 auto}.event-chip{border-left:5px solid var(--ec,#5f7f9f)!important}.cal-detail-participants{margin-top:10px}.session summary{position:relative}
 """
           html=html.replace('</style>',css+'</style>',1)
 
           helper="""function participantHtml(list,color){list=arr(list);if(!list.length)return '';return '<div class=\"session-participants\"><div class=\"session-participants-head\"><b>Compañeros que participan</b><span>'+list.length+' jugadores</span></div><div class=\"participant-chips\">'+list.map(function(p){return '<span class=\"participant-chip '+(p.isMe?'me':'')+'\"><i class=\"participant-dot\" style=\"--pc:'+esc(color||'#5f7f9f')+'\"></i>'+esc(p.name||p.firstName||'Jugador')+(p.isMe?' · Tú':'')+'</span>'}).join('')+'</div></div>'}\n"""
           html=html.replace('function renderField(){',helper+'function renderField(){',1)
 
-          # Home cards also keep event/session color.
           html=re.sub(r"function eventRow\(x\)\{.*?\}\nfunction renderHome", "function eventRow(x){var c=x.color||'#5f7f9f';return '<div class=\"card\" style=\"padding:12px 14px;display:flex;justify-content:space-between;gap:12px;align-items:center;border-left:6px solid '+esc(c)+'\"><div><b style=\"font-size:12px\">'+esc(x.title)+'</b><div class=\"meta\">'+esc(dstr(x.date))+(x.time?' · '+esc(x.time):'')+(x.duration?' · '+esc(x.duration)+' min':'')+'</div></div><span class=\"pill\" style=\"background:'+esc(c)+';color:#fff\">'+(x.kind==='strength'?'Fuerza':x.kind==='field'?'Campo':x.kind==='match'?'Partido':'Evento')+'</span></div>'}\nfunction renderHome", html, count=1, flags=re.S)
 
-          # Calendar event chips use the session color.
           html=re.sub(r"function eventChip\(x\)\{.*?\}\nfunction renderCalendar", "function eventChip(x){var c=x.color||'#5f7f9f';return '<button class=\"event-chip '+esc(x.kind||'event')+'\" style=\"--ec:'+esc(c)+';background:'+esc(c)+'22;color:'+esc(c)+'\" data-event-id=\"'+esc(x.id)+'\" title=\"'+esc((x.time?x.time+' · ':'')+x.title)+'\">'+esc((x.time?x.time+' ':'')+x.title)+'</button>'}\nfunction renderCalendar", html, count=1, flags=re.S)
 
-          # Event detail shows teammates.
-          html=re.sub(r"function showCalEvent\(id\)\{.*?\}\nvar V713_FRONT", "function showCalEvent(id){var x=arr(model.calendar).find(function(e){return String(e.id)===String(id)});if(!x)return;var c=x.color||'#5f7f9f';el('calDetail').innerHTML='<div class=\"cal-detail\" style=\"border-left:6px solid '+esc(c)+'\"><b>'+esc(x.title)+'</b><div style=\"margin-top:4px\">'+esc(dstr(x.date))+(x.time?' · '+esc(x.time):'')+(x.duration?' · '+esc(x.duration)+' min':'')+'</div>'+(x.comment?'<div style=\"margin-top:6px\">'+esc(x.comment)+'</div>':'')+'<div class=\"cal-detail-participants\">'+participantHtml(x.participants,c)+'</div></div>'}\nvar V713_FRONT", html, count=1, flags=re.S)
+          html=re.sub(r"function showCalEvent\(id\)\{.*?\}\nvar V713_FRONT", "function showCalEvent(id){var x=arr(model.calendar).find(function(e){return String(e.id)===String(id)});if(!x)return;var c=x.color||'#5f7f9f';el('calDetail').innerHTML='<div class=\"cal-detail\" style=\"border-left:6px solid '+esc(c)+'\"><b>'+esc(x.title)+'</b><div style=\"margin-top:4px\">'+esc(dstr(x.date))+(x.time?' · '+esc(x.time):'')+(x.duration?' · '+esc(x.duration)+' min':'')+'</div>'+(x.comment?'<div style=\"margin-top:6px\">'+esc(x.comment)+'</div>':'')+participantHtml(x.participants,c)+'</div>'}\nvar V713_FRONT", html, count=1, flags=re.S)
 
-          # Session cards: colored edge + participants before tasks/exercises.
           html=html.replace("return '<details class=\"session\" '+(i<2?'open':'')+'><summary>", "return '<details class=\"session\" style=\"border-left:6px solid '+esc(x.color||'#5f7f9f')+'\" '+(i<2?'open':'')+'><summary>", 2)
           html=html.replace("<span class=\"pill field\">Campo</span></summary><div class=\"session-body\">'+body+'", "<span class=\"pill field\" style=\"background:'+esc(x.color||'#2f80ed')+';color:#fff\">Campo</span></summary><div class=\"session-body\">'+participantHtml(x.participants,x.color)+body+'", 1)
           html=html.replace("<span class=\"pill strength\">Fuerza</span></summary><div class=\"session-body\">'+sum+table+'", "<span class=\"pill strength\" style=\"background:'+esc(x.color||'#7055b8')+';color:#fff\">Fuerza</span></summary><div class=\"session-body\">'+participantHtml(x.participants,x.color)+sum+table+'", 1)
 
-          # Keep production's exact HTML length. Reuse the existing padding comment.
           target=113139
           m=re.search(r'<!--x+-->',html)
           if m:
-              html=html[:m.start()]+'<!--PAD-->'+html[m.end():]
+              html=html[:m.start()]+html[m.end():]
           if len(html)>target:
               raise SystemExit(f'HTML too large {len(html)} > {target}')
           pad=target-len(html)
-          filler='<!--'+('x'*max(0,pad-7))+'-->' if pad>=7 else (' '*pad)
+          filler=('<!--'+('x'*(pad-7))+'-->') if pad>=7 else (' '*pad)
           assert len(filler)==pad
-          html=html.replace('<!--PAD-->',filler,1) if '<!--PAD-->' in html else html+filler
+          html=html.replace('</body>',filler+'</body>',1)
           assert len(html)==target, len(html)
           for marker in ['Compañeros que participan','participantHtml(x.participants','--ec:']:
               assert marker in html, marker
