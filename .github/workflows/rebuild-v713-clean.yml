@@ -1,0 +1,72 @@
+name: Rebuild V713 Clean
+on:
+  push:
+    paths:
+      - 'player-v713-source/rebuild-trigger.txt'
+permissions:
+  contents: write
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild and validate V713 bundles
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64, gzip, hashlib
+
+          src=''.join(Path(f'player-v713-source/src{i:02d}.txt').read_text(encoding='utf-8').strip() for i in range(10))
+          raw=gzip.decompress(base64.b64decode(src, validate=True))
+          html=raw.decode('utf-8')
+          assert len(html)==113139, len(html)
+          assert len(raw)==113331, len(raw)
+          for marker in ('¿Cómo ha sido tu sueño?','¿Cómo de estresado estás?','data-v713-map'):
+              assert marker in html, marker
+          print('VALID_SOURCE',len(html),len(raw),hashlib.sha256(raw).hexdigest())
+
+          names=['p0','p1','r0','r1','r2','r3','r4']
+          total=len(html)
+          bounds=[round(i*total/7) for i in range(8)]
+          chunks=[html[bounds[i]:bounds[i+1]] for i in range(7)]
+          assert ''.join(chunks)==html
+
+          out={}
+          for name,chunk in zip(names,chunks):
+              gz=gzip.compress(chunk.encode('utf-8'),compresslevel=9,mtime=0)
+              b64=base64.b64encode(gz).decode('ascii')
+              # strict validation
+              back=gzip.decompress(base64.b64decode(b64,validate=True)).decode('utf-8')
+              assert back==chunk
+              out[name]=b64
+              print('BUNDLE',name,'chars',len(chunk),'b64',len(b64))
+
+          root=Path('player-v713'); root.mkdir(exist_ok=True)
+          (root/'p0.b64').write_text(out['p0'],encoding='utf-8')
+          (root/'p1.b64').write_text(out['p1'],encoding='utf-8')
+          (root/'p1-repaired.b64').write_text(out['p1'],encoding='utf-8')
+          p1=out['p1']; q,r=divmod(len(p1),6); pos=0
+          for i in range(6):
+              n=q+(1 if i<r else 0)
+              (root/f'p1s{i}.txt').write_text(p1[pos:pos+n],encoding='utf-8')
+              pos+=n
+          assert ''.join((root/f'p1s{i}.txt').read_text() for i in range(6))==p1
+          for name in ('r0','r1','r2','r3','r4'):
+              (root/f'{name}.b64').write_text(out[name],encoding='utf-8')
+
+          # Validate using exactly the files the production assembler reads.
+          logical=[
+              (root/'p0.b64').read_text().strip(),
+              ''.join((root/f'p1s{i}.txt').read_text().strip() for i in range(6)),
+              *[(root/f'r{i}.b64').read_text().strip() for i in range(5)]
+          ]
+          reconstructed=''.join(gzip.decompress(base64.b64decode(x,validate=True)).decode('utf-8') for x in logical)
+          assert reconstructed==html
+          assert len(reconstructed)==113139
+          print('VALID_RECONSTRUCT',len(reconstructed),hashlib.sha256(reconstructed.encode('utf-8')).hexdigest())
+          PY
+          git config user.name 'ARLAB V713 Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add player-v713/p0.b64 player-v713/p1.b64 player-v713/p1-repaired.b64 player-v713/p1s0.txt player-v713/p1s1.txt player-v713/p1s2.txt player-v713/p1s3.txt player-v713/p1s4.txt player-v713/p1s5.txt player-v713/r0.b64 player-v713/r1.b64 player-v713/r2.b64 player-v713/r3.b64 player-v713/r4.b64
+          git commit -m 'Rebuild clean V713 player portal bundles' || true
+          git push
