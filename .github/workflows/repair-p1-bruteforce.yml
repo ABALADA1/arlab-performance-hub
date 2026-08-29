@@ -1,0 +1,55 @@
+name: Repair P1 Bruteforce
+on:
+  push:
+    paths:
+      - 'player-v713/repair-trigger2.txt'
+permissions:
+  contents: read
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Locate and repair missing Base64 char
+        run: |
+          python - <<'PY'
+          import base64,gzip,zlib,string
+          s=open('player-v713/p1.b64','r',encoding='utf-8').read().strip()
+          alpha='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+          print('len',len(s))
+          # Approximate gzip failure byte using one-byte feed after padding the malformed Base64.
+          pad=s + '='*((4-len(s)%4)%4)
+          raw=base64.b64decode(pad,validate=False)
+          d=zlib.decompressobj(16+zlib.MAX_WBITS)
+          fail=None
+          for i,b in enumerate(raw):
+              try:d.decompress(bytes([b]))
+              except zlib.error as e:
+                  fail=i; print('gzip_fail_byte',i,str(e)); break
+          center=(fail*4//3 if fail is not None else len(s)//2)
+          lo=max(0,center-40); hi=min(len(s),center+40)
+          print('search_chars',lo,hi,'center',center)
+          found=[]
+          for pos in range(lo,hi+1):
+              for ch in alpha:
+                  c=s[:pos]+ch+s[pos:]
+                  try:
+                      raw=base64.b64decode(c,validate=True)
+                      out=gzip.decompress(raw)
+                  except Exception:
+                      continue
+                  found.append((pos,ch,len(out),out[:80],out[-80:]))
+                  print('FOUND',pos,ch,len(out),repr(out[:80]),repr(out[-80:]))
+          print('found_count',len(found))
+          if not found:
+              # Expand around failure point if necessary.
+              lo=max(0,center-400); hi=min(len(s),center+400)
+              print('expanded_search',lo,hi)
+              for pos in range(lo,hi+1):
+                  for ch in alpha:
+                      c=s[:pos]+ch+s[pos:]
+                      try:
+                          raw=base64.b64decode(c,validate=True); out=gzip.decompress(raw)
+                      except Exception: continue
+                      print('FOUND_EXPANDED',pos,ch,len(out),repr(out[:80]),repr(out[-80:])); raise SystemExit(0)
+          PY
