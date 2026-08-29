@@ -1,0 +1,13 @@
+len 113139
+renderField True
+renderStrength True
+eventChip True
+showCalEvent True
+details_count 2
+field_body 1
+strength_body 1
+eventRow True
+eventChipRegex True
+showCalRegex True
+padding_found True padding_len 5181
+base_without_padding 107958 free_space 5181
