@@ -1,0 +1,50 @@
+name: Compact Checkout V714
+on:
+  push:
+    paths:
+      - 'player-v713/checkout-v714-compact-trigger.txt'
+permissions:
+  contents: write
+jobs:
+  compact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove obsolete checkout code and preserve production length
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import gzip,base64,hashlib
+          root=Path('player-v713')
+          names=['p0','p1','r0','r1','r2','r3','r4']
+          html=''.join(gzip.decompress(base64.b64decode(''.join((root/f'{n}.b64').read_text().split()))).decode() for n in names)
+          assert 'CHECK-OUT APP NORMAL V714' in html
+          cuts=[]
+          a=html.find('.rpe-wrap{'); b=html.find('.report-shell{',a)
+          if a>=0 and b>a: cuts.append((a,b))
+          a=html.find('.bodymap-card{'); b=html.find('/* CHECK-IN V713 */',a)
+          if a>=0 and b>a: cuts.append((a,b))
+          a=html.find('function painOptions()'); b=html.find('var V713_FRONT=',a)
+          if a>=0 and b>a: cuts.append((a,b))
+          for a,b in sorted(cuts,reverse=True): html=html[:a]+html[b:]
+          target=113139
+          if len(html)>target: raise SystemExit(f'HTML still too large: {len(html)}')
+          pad=target-len(html)
+          if pad:
+              filler='<!--'+('x'*(pad-7))+'-->' if pad>=7 else ' '*pad
+              html=html.replace('</body>',filler+'</body>',1)
+          assert len(html)==target,(len(html),target)
+          assert 'data-co714-map' in html and 'Selecciona las zonas que tienes más sensibles' in html
+          bounds=[round(i*len(html)/7) for i in range(8)]
+          for i,n in enumerate(names):
+              chunk=html[bounds[i]:bounds[i+1]]
+              (root/f'{n}.b64').write_text(base64.b64encode(gzip.compress(chunk.encode(),9,mtime=0)).decode())
+          rebuilt=''.join(gzip.decompress(base64.b64decode((root/f'{n}.b64').read_text())).decode() for n in names)
+          assert rebuilt==html
+          print('VALID_V714_PRODUCTION',len(html),hashlib.sha256(html.encode()).hexdigest())
+          PY
+          git config user.name 'ARLAB Checkout Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add player-v713/p0.b64 player-v713/p1.b64 player-v713/r0.b64 player-v713/r1.b64 player-v713/r2.b64 player-v713/r3.b64 player-v713/r4.b64
+          git commit -m 'Compact V714 checkout for production portal' || true
+          git push
