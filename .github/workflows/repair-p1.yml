@@ -1,0 +1,15 @@
+name: Repair P1
+on:
+  push:
+    paths:
+      - 'player-v713/repair-trigger.txt'
+permissions:
+  contents: read
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find missing Base64 character
+        run: |
+          set -e
+          curl -fsSL 'https://xnlkjkrkkehplsbbziil.supabase.co/functions/v1/arlab-repair-p1'
