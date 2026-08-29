@@ -1,0 +1,39 @@
+name: Apply P1 Repair
+on:
+  push:
+    paths:
+      - 'player-v713/apply-repair-trigger.txt'
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply and validate repair
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64,gzip
+          p=Path('player-v713/p1s0.txt')
+          s=p.read_text(encoding='utf-8').strip()
+          if len(s)==2499:
+              s=s[:2191]+'i'+s[2191:]
+              p.write_text(s,encoding='utf-8')
+          elif len(s)==2500:
+              assert s[2191]=='i', (len(s),s[2191])
+          else:
+              raise SystemExit(f'unexpected s0 length {len(s)}')
+          parts=[Path(f'player-v713/p1s{i}.txt').read_text(encoding='utf-8').strip() for i in range(6)]
+          whole=''.join(parts)
+          assert len(whole)==14860, len(whole)
+          raw=base64.b64decode(whole,validate=True)
+          out=gzip.decompress(raw)
+          print('VALID',len(whole),len(out),out[:80],out[-80:])
+          Path('player-v713/p1-repaired.b64').write_text(whole,encoding='utf-8')
+          PY
+          git config user.name 'ARLAB Repair Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add player-v713/p1s0.txt player-v713/p1-repaired.b64
+          git commit -m 'Repair V713 player portal bundle'
+          git push
