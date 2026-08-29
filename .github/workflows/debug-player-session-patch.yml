@@ -1,0 +1,42 @@
+name: Debug Player Session Patch
+on:
+  push:
+    paths:
+      - 'player-v713/session-patch-debug-trigger.txt'
+permissions:
+  contents: write
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Diagnose patch
+        run: |
+          python - <<'PY' > player-v713/session-patch-status.txt 2>&1
+          from pathlib import Path
+          import base64,gzip,re,traceback
+          try:
+            root=Path('player-v713'); names=['p0','p1','r0','r1','r2','r3','r4']
+            html=''.join(gzip.decompress(base64.b64decode(''.join((root/f'{n}.b64').read_text().split()))).decode('utf-8') for n in names)
+            print('len',len(html))
+            print('renderField', 'function renderField()' in html)
+            print('renderStrength', 'function renderStrength()' in html)
+            print('eventChip', 'function eventChip(x)' in html)
+            print('showCalEvent', 'function showCalEvent(id)' in html)
+            print('details_count', html.count("return '<details class=\"session\" '+(i<2?'open':'')+'><summary>"))
+            print('field_body', html.count("<span class=\"pill field\">Campo</span></summary><div class=\"session-body\">'+body+'"))
+            print('strength_body', html.count("<span class=\"pill strength\">Fuerza</span></summary><div class=\"session-body\">'+sum+table+'"))
+            for pat,name in [(r"function eventRow\(x\)\{.*?\}\nfunction renderHome",'eventRow'),(r"function eventChip\(x\)\{.*?\}\nfunction renderCalendar",'eventChipRegex'),(r"function showCalEvent\(id\)\{.*?\}\nvar V713_FRONT",'showCalRegex')]:
+              print(name, bool(re.search(pat,html,re.S)))
+            m=re.search(r'<!--x+-->',html)
+            print('padding_found',bool(m),'padding_len',len(m.group(0)) if m else 0)
+            base=html[:m.start()]+html[m.end():] if m else html
+            print('base_without_padding',len(base),'free_space',113139-len(base))
+          except Exception:
+            traceback.print_exc()
+          PY
+          git config user.name 'ARLAB Debug Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add player-v713/session-patch-status.txt
+          git commit -m 'Debug player session patch' || true
+          git push
