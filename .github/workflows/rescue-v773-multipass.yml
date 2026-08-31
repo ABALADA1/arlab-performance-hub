@@ -1,0 +1,103 @@
+name: Rescue V773 multipass
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/rescue-v773-multipass.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  rescue:
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        pass: [1,2,3,4]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download saved V773 index
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L -fsS -H "Authorization: Bearer ${GH_TOKEN}" -H 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/ABALADA1/arlab-performance-hub/actions/artifacts/9752222645/zip' -o /tmp/rescue-index.zip
+          mkdir -p /tmp/saved && unzip -q /tmp/rescue-index.zip -d /tmp/saved
+          test -s /tmp/saved/index-safe.html
+
+      - name: Rescue all exact versioned assets
+        shell: bash
+        env:
+          PASS_NO: ${{ matrix.pass }}
+        run: |
+          set -euo pipefail
+          mkdir -p recovered
+          cp /tmp/saved/index-safe.html recovered/index-safe.html
+          python3 - <<'PY'
+          from pathlib import Path
+          from urllib.parse import urlparse
+          from concurrent.futures import ThreadPoolExecutor, as_completed
+          import re, subprocess, os, time
+
+          html=Path('/tmp/saved/index-safe.html').read_text('utf-8',errors='ignore')
+          base='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
+          index=base+'index-safe.html'
+          refs=[]
+          for m in re.finditer(r'(?:src|href)=["\']([^"\']+)["\']',html,re.I):
+              raw=m.group(1).strip()
+              if raw.startswith(base): full=raw
+              elif re.match(r'^[A-Za-z0-9_.\-/]+\.(?:js|css|json|png|jpg|jpeg|webp|svg)(?:\?.*)?$',raw,re.I): full=base+raw
+              else: continue
+              if full not in refs: refs.append(full)
+
+          root=Path('recovered')
+          pass_no=os.environ.get('PASS_NO','0')
+          def fetch(item):
+              i,u=item
+              path=urlparse(u).path
+              marker='/arlab-v699-static/'
+              rel=path.split(marker,1)[1] if marker in path else Path(path).name
+              rel=rel.lstrip('/')
+              out=root/rel
+              out.parent.mkdir(parents=True,exist_ok=True)
+              css=rel.lower().endswith('.css')
+              dest='style' if css else ('script' if rel.lower().endswith('.js') else 'empty')
+              accept='text/css,*/*;q=0.1' if css else '*/*'
+              tmp=Path('/tmp')/f'v773_{pass_no}_{i}.tmp'
+              cmd=['curl','-L','--compressed','--connect-timeout','4','--max-time','9','-sS',
+                   '-o',str(tmp),'-w','%{http_code} %{size_download}',
+                   '-H','User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151 Safari/537.36',
+                   '-H',f'Accept: {accept}','-H','Accept-Language: es-ES,es;q=0.9,en;q=0.8',
+                   '-H',f'Referer: {index}','-H',f'Sec-Fetch-Dest: {dest}',
+                   '-H','Sec-Fetch-Mode: no-cors','-H','Sec-Fetch-Site: same-origin',u]
+              p=subprocess.run(cmd,capture_output=True,text=True)
+              stat=p.stdout.strip()
+              if stat.startswith('200 ') and tmp.exists() and tmp.stat().st_size>0:
+                  tmp.replace(out)
+                  return rel,out.stat().st_size,'200'
+              try: tmp.unlink(missing_ok=True)
+              except: pass
+              code=stat.split(' ',1)[0] if stat else 'ERR'
+              return rel,0,code
+
+          results=[]
+          with ThreadPoolExecutor(max_workers=8) as ex:
+              futs=[ex.submit(fetch,x) for x in enumerate(refs)]
+              for n,f in enumerate(as_completed(futs),1):
+                  r=f.result(); results.append(r)
+                  if n%50==0: print('PASS',pass_no,'progress',n,'/',len(refs),'ok',sum(1 for x in results if x[2]=='200'))
+          ok=[r for r in results if r[2]=='200']
+          bad=[r for r in results if r[2]!='200']
+          (root/'manifest.tsv').write_text('\n'.join(f'{r}\t{s}' for r,s,_ in sorted(ok)),encoding='utf-8')
+          (root/'failed.tsv').write_text('\n'.join(f'{r}\t{c}' for r,_,c in sorted(bad)),encoding='utf-8')
+          print('PASS',pass_no,'TOTAL',len(refs),'OK',len(ok),'FAILED',len(bad),'BYTES',sum(x[1] for x in ok))
+          PY
+
+      - name: Upload pass
+        uses: actions/upload-artifact@v4
+        with:
+          name: v773-cache-pass-${{ matrix.pass }}
+          path: recovered
+          retention-days: 7
