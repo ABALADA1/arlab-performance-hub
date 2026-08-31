@@ -1,0 +1,26 @@
+name: Probe ARLAB V773 rescue
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/rescue-v773-probe.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe old index
+        shell: bash
+        run: |
+          set -u
+          URL='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/index-safe.html'
+          rm -f /tmp/index /tmp/headers
+          CODE=$(curl -L --connect-timeout 8 --max-time 15 -sS -D /tmp/headers -w '%{http_code}' -o /tmp/index "$URL" || true)
+          echo "HTTP_STATUS=$CODE"
+          echo "BYTES=$(wc -c < /tmp/index 2>/dev/null || echo 0)"
+          echo '--- HEADERS ---'
+          tail -20 /tmp/headers 2>/dev/null || true
+          echo '--- BODY HEAD ---'
+          head -c 300 /tmp/index 2>/dev/null || true
+          echo
