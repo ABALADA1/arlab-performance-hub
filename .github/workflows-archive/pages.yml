@@ -1,0 +1,109 @@
+name: Deploy ARLAB Cloud
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build stable ARLAB site
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf site
+          mkdir -p site/v710
+          cp -R checkin site/checkin
+          cp -R emergency site/emergency
+          cp -R standalone-pro-x5 site/pro-x5
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, gzip, re
+
+          out = Path('site')
+          sb = 'https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
+          bridge = 'https://xnlkjkrkkehplsbbziil.supabase.co/functions/v1/arlab-v699-bridge'
+
+          def unpack(path):
+              raw = Path(path).read_text(encoding='utf-8').strip()
+              return gzip.decompress(base64.b64decode(raw)).decode('utf-8')
+
+          def unpack_join(*paths):
+              raw = ''.join(Path(p).read_text(encoding='utf-8').strip() for p in paths)
+              return gzip.decompress(base64.b64decode(raw)).decode('utf-8')
+
+          html = unpack('v710/chunk1.txt')
+          css = unpack('v710/chunk2.txt')
+          js = unpack_join('v710/chunk3a.txt', 'v710/chunk3b.txt')
+
+          cloud = (
+              f'<script src="{bridge}?release=710"></script>\n'
+              '<script>window.ARLAB_CLOUD_RELEASE="V710";'
+              'window.ARLAB_PLAYER_PORTAL="/arlab-performance-hub/checkin/";</script>\n'
+          )
+          html = html.replace('<head>', '<head>\n' + cloud, 1)
+          html = re.sub(r'\s*<script[^>]+src=["\'][^"\']*arlab-v620-bundle-guard\.js[^"\']*["\'][^>]*></script>', '', html, flags=re.I)
+          html = re.sub(r'\s*<script[^>]+src=["\'][^"\']*arlab-v671-refresh-memory-guard\.js[^"\']*["\'][^>]*></script>', '', html, flags=re.I)
+          html = re.sub(r'\s*<link[^>]+href=["\']arlab-v70[1-9][^"\']*\.css[^"\']*["\'][^>]*>', '', html, flags=re.I)
+          html = re.sub(r'\s*<script[^>]+src=["\']arlab-v70[1-9][^"\']*\.js[^"\']*["\'][^>]*></script>', '', html, flags=re.I)
+          html = html.replace('</head>', '  <link rel="stylesheet" href="v710/arlab-v710.css?v=7103">\n</head>', 1)
+          html = html.replace('</body>', '  <script src="v710/arlab-v710.js?v=7103" defer></script>\n</body>', 1)
+
+          def abs_asset(m):
+              attr, name, query = m.group(1), m.group(2), m.group(3) or ''
+              return f'{attr}{sb}{name}{query}"'
+
+          html = re.sub(
+              r'((?:src|href)=")((?:arlab|gps|macro|micro|strength|tests|tindeq|spro|wimu)[^"?]*\.(?:js|css))(\?[^\"]*)?"',
+              abs_asset,
+              html,
+              flags=re.I,
+          )
+
+          (out / 'index.html').write_text(html, encoding='utf-8')
+          (out / 'v710' / 'arlab-v710.css').write_text(css, encoding='utf-8')
+          (out / 'v710' / 'arlab-v710.js').write_text(js, encoding='utf-8')
+          print('Stable site + PRO X5 prepared')
+          PY
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Verify published routes
+        shell: bash
+        run: |
+          set -e
+          sleep 8
+          curl -fsSIL "${{ steps.deployment.outputs.page_url }}emergency/" | head -20
+          curl -fsSIL "${{ steps.deployment.outputs.page_url }}pro-x5/" | head -20
+          curl -fsSIL "${{ steps.deployment.outputs.page_url }}pro-x5/app.js" | head -20
+          curl -fsSIL "${{ steps.deployment.outputs.page_url }}pro-x5/style.css" | head -20
