@@ -1,0 +1,33 @@
+name: Verify PRO X5 live
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-pro-x5-live.yml']
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check HTML CSS JS
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://wchzahvvujxxajlmxhqa.supabase.co/functions/v1/arlab-pro-x5?k=arlab-pro-x5-2026'
+          echo 'HTML'
+          curl -fsS --max-time 60 -D /tmp/h1 "$BASE" -o /tmp/index.html
+          head -20 /tmp/h1
+          grep -q 'ARLAB Performance Hub PRO' /tmp/index.html
+          echo "HTML_BYTES=$(wc -c < /tmp/index.html)"
+          echo 'CSS'
+          curl -fsS --max-time 60 -D /tmp/h2 "$BASE&asset=style.css" -o /tmp/style.css
+          head -20 /tmp/h2
+          grep -q -- '--navy' /tmp/style.css
+          echo "CSS_BYTES=$(wc -c < /tmp/style.css)"
+          echo 'JS'
+          curl -fsS --max-time 60 -D /tmp/h3 "$BASE&asset=app.js" -o /tmp/app.js
+          head -20 /tmp/h3
+          grep -q 'ARLAB Performance Hub PRO X5' /tmp/app.js
+          echo "JS_BYTES=$(wc -c < /tmp/app.js)"
+          echo 'ALL_OK'
