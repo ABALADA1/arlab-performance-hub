@@ -32,6 +32,7 @@ jobs:
           mkdir -p site/v710
           cp -R checkin site/checkin
           cp -R emergency site/emergency
+          cp -R standalone-pro-x5 site/pro-x5
 
           python3 - <<'PY'
           from pathlib import Path
@@ -80,7 +81,7 @@ jobs:
           (out / 'index.html').write_text(html, encoding='utf-8')
           (out / 'v710' / 'arlab-v710.css').write_text(css, encoding='utf-8')
           (out / 'v710' / 'arlab-v710.js').write_text(js, encoding='utf-8')
-          print('Stable site prepared')
+          print('Stable site + PRO X5 prepared')
           PY
 
       - name: Configure Pages
@@ -97,9 +98,12 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Verify emergency route
+      - name: Verify published routes
         shell: bash
         run: |
           set -e
           sleep 8
           curl -fsSIL "${{ steps.deployment.outputs.page_url }}emergency/" | head -20
+          curl -fsSIL "${{ steps.deployment.outputs.page_url }}pro-x5/" | head -20
+          curl -fsSIL "${{ steps.deployment.outputs.page_url }}pro-x5/app.js" | head -20
+          curl -fsSIL "${{ steps.deployment.outputs.page_url }}pro-x5/style.css" | head -20
