@@ -24,7 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build existing ARLAB site
+      - name: Build stable ARLAB site
         shell: bash
         run: |
           set -euo pipefail
@@ -32,104 +32,56 @@ jobs:
           mkdir -p site/v710
           cp -R checkin site/checkin
           cp -R emergency site/emergency
-          python3 - <<'PY'
-          from pathlib import Path
-          import base64,gzip,re
-          out=Path('site')
-          sb='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
-          bridge='https://xnlkjkrkkehplsbbziil.supabase.co/functions/v1/arlab-v699-bridge'
-          def unpack(p): return gzip.decompress(base64.b64decode(Path(p).read_text().strip())).decode()
-          def unpack_join(*ps): return gzip.decompress(base64.b64decode(''.join(Path(p).read_text().strip() for p in ps))).decode()
-          html=unpack('v710/chunk1.txt'); css=unpack('v710/chunk2.txt'); js=unpack_join('v710/chunk3a.txt','v710/chunk3b.txt')
-          cloud=f'<script src="{bridge}?release=710"></script>\n<script>window.ARLAB_CLOUD_RELEASE="V710";window.ARLAB_PLAYER_PORTAL="/arlab-performance-hub/checkin/";</script>\n'
-          html=html.replace('<head>','<head>\n'+cloud,1)
-          html=re.sub(r'\s*<script[^>]+src=["\'][^"\']*arlab-v620-bundle-guard\.js[^"\']*["\'][^>]*></script>','',html,flags=re.I)
-          html=re.sub(r'\s*<script[^>]+src=["\'][^"\']*arlab-v671-refresh-memory-guard\.js[^"\']*["\'][^>]*></script>','',html,flags=re.I)
-          html=re.sub(r'\s*<link[^>]+href=["\']arlab-v70[1-9][^"\']*\.css[^"\']*["\'][^>]*>','',html,flags=re.I)
-          html=re.sub(r'\s*<script[^>]+src=["\']arlab-v70[1-9][^"\']*\.js[^"\']*["\'][^>]*></script>','',html,flags=re.I)
-          html=html.replace('</head>','<link rel="stylesheet" href="v710/arlab-v710.css?v=7103">\n</head>',1)
-          html=html.replace('</body>','<script src="v710/arlab-v710.js?v=7103" defer></script>\n</body>',1)
-          def abs_asset(m): return f'{m.group(1)}{sb}{m.group(2)}{m.group(3) or ""}"'
-          html=re.sub(r'((?:src|href)=")((?:arlab|gps|macro|micro|strength|tests|tindeq|spro|wimu)[^"?]*\.(?:js|css))(\?[^\"]*)?"',abs_asset,html,flags=re.I)
-          (out/'index.html').write_text(html)
-          (out/'v710'/'arlab-v710.css').write_text(css)
-          (out/'v710'/'arlab-v710.js').write_text(js)
-          print('V710 preparada',len(html),len(css),len(js))
-          PY
-
-      - name: Recover deployed V773 snapshot
-        shell: bash
-        run: |
-          set -euo pipefail
-          OLD_STATIC='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
-          OLD_FN='https://xnlkjkrkkehplsbbziil.supabase.co/functions/v1/'
-          NEW_FN='https://wchzahvvujxxajlmxhqa.supabase.co/functions/v1/'
-          OUT='site/recovered-v773'
-          mkdir -p "$OUT"
-
-          curl -fL --retry 4 --retry-all-errors --connect-timeout 10 --max-time 60 "${OLD_STATIC}index-safe.html" -o /tmp/v773-index.html
-          curl -fL --retry 4 --retry-all-errors --connect-timeout 10 --max-time 60 "${OLD_FN}arlab-v699-state-patch?recovery=773" -o /tmp/v773-state.js
-          curl -fL --retry 4 --retry-all-errors --connect-timeout 10 --max-time 60 "${OLD_FN}arlab-v699-player-sync-patch?recovery=773" -o /tmp/v773-player-sync.js
-          cat /tmp/v773-state.js /tmp/v773-player-sync.js > "$OUT/arlab-v773-recovery-bridge.js"
-          sed -i "s#${OLD_FN}#${NEW_FN}#g" "$OUT/arlab-v773-recovery-bridge.js"
 
           python3 - <<'PY'
           from pathlib import Path
-          from urllib.parse import urlsplit,unquote
-          import os,re
-          old='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
-          out=Path('site/recovered-v773')
-          html=Path('/tmp/v773-index.html').read_text(encoding='utf-8',errors='replace').replace(old,'./')
-          html=re.sub(r'<base\b[^>]*>','',html,flags=re.I)
-          access='''<script>(function(){try{if(!sessionStorage.getItem('arlabCloudKey')){var k=(window.prompt('ARLAB Cloud · Clave de acceso:')||'').trim();if(k)sessionStorage.setItem('arlabCloudKey',k)}}catch(e){}})();</script>\n<script src="./arlab-v773-recovery-bridge.js"></script>\n'''
-          html=html.replace('<head>','<head>\n<base href="./">\n'+access,1)
-          html=html.replace('</head>','<meta name="arlab-recovery" content="V773-deployed-snapshot">\n</head>',1)
-          (out/'index.html').write_text(html,encoding='utf-8')
-          refs=set()
-          for m in re.finditer(r'(?:src|href)\s*=\s*["\']([^"\']+)',html,flags=re.I):
-              v=m.group(1).strip()
-              if not v or v.startswith(('#','data:','blob:','javascript:','mailto:','http://','https://','//')): continue
-              p=unquote(urlsplit(v).path).lstrip('./').lstrip('/')
-              p=os.path.normpath(p).replace('\\','/')
-              if p and p!='.' and not p.startswith('../') and p!='arlab-v773-recovery-bridge.js': refs.add(p)
-          Path('/tmp/v773-refs.txt').write_text('\n'.join(sorted(refs))+'\n')
-          print('HTML refs',len(refs))
+          import base64, gzip, re
+
+          out = Path('site')
+          sb = 'https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
+          bridge = 'https://xnlkjkrkkehplsbbziil.supabase.co/functions/v1/arlab-v699-bridge'
+
+          def unpack(path):
+              raw = Path(path).read_text(encoding='utf-8').strip()
+              return gzip.decompress(base64.b64decode(raw)).decode('utf-8')
+
+          def unpack_join(*paths):
+              raw = ''.join(Path(p).read_text(encoding='utf-8').strip() for p in paths)
+              return gzip.decompress(base64.b64decode(raw)).decode('utf-8')
+
+          html = unpack('v710/chunk1.txt')
+          css = unpack('v710/chunk2.txt')
+          js = unpack_join('v710/chunk3a.txt', 'v710/chunk3b.txt')
+
+          cloud = (
+              f'<script src="{bridge}?release=710"></script>\n'
+              '<script>window.ARLAB_CLOUD_RELEASE="V710";'
+              'window.ARLAB_PLAYER_PORTAL="/arlab-performance-hub/checkin/";</script>\n'
+          )
+          html = html.replace('<head>', '<head>\n' + cloud, 1)
+          html = re.sub(r'\s*<script[^>]+src=["\'][^"\']*arlab-v620-bundle-guard\.js[^"\']*["\'][^>]*></script>', '', html, flags=re.I)
+          html = re.sub(r'\s*<script[^>]+src=["\'][^"\']*arlab-v671-refresh-memory-guard\.js[^"\']*["\'][^>]*></script>', '', html, flags=re.I)
+          html = re.sub(r'\s*<link[^>]+href=["\']arlab-v70[1-9][^"\']*\.css[^"\']*["\'][^>]*>', '', html, flags=re.I)
+          html = re.sub(r'\s*<script[^>]+src=["\']arlab-v70[1-9][^"\']*\.js[^"\']*["\'][^>]*></script>', '', html, flags=re.I)
+          html = html.replace('</head>', '  <link rel="stylesheet" href="v710/arlab-v710.css?v=7103">\n</head>', 1)
+          html = html.replace('</body>', '  <script src="v710/arlab-v710.js?v=7103" defer></script>\n</body>', 1)
+
+          def abs_asset(m):
+              attr, name, query = m.group(1), m.group(2), m.group(3) or ''
+              return f'{attr}{sb}{name}{query}"'
+
+          html = re.sub(
+              r'((?:src|href)=")((?:arlab|gps|macro|micro|strength|tests|tindeq|spro|wimu)[^"?]*\.(?:js|css))(\?[^\"]*)?"',
+              abs_asset,
+              html,
+              flags=re.I,
+          )
+
+          (out / 'index.html').write_text(html, encoding='utf-8')
+          (out / 'v710' / 'arlab-v710.css').write_text(css, encoding='utf-8')
+          (out / 'v710' / 'arlab-v710.js').write_text(js, encoding='utf-8')
+          print('Stable site prepared')
           PY
-
-          export OLD_STATIC OUT
-          download_asset() {
-            rel="$1"
-            [ -z "$rel" ] && return 0
-            mkdir -p "$OUT/$(dirname "$rel")"
-            curl -fsSL --retry 1 --connect-timeout 8 --max-time 30 "${OLD_STATIC}${rel}" -o "$OUT/$rel" || { rm -f "$OUT/$rel"; echo "WARN $rel"; }
-          }
-          export -f download_asset
-          xargs -r -P 24 -n 1 bash -c 'download_asset "$0"' < /tmp/v773-refs.txt
-
-          python3 - <<'PY'
-          from pathlib import Path
-          from urllib.parse import urlsplit,unquote
-          import os,re
-          out=Path('site/recovered-v773'); refs=set()
-          for css in out.rglob('*.css'):
-              txt=css.read_text(encoding='utf-8',errors='replace'); base=css.relative_to(out).parent
-              for m in re.finditer(r'url\(\s*["\']?([^\)"\']+)',txt,flags=re.I):
-                  v=m.group(1).strip()
-                  if not v or v.startswith(('data:','http://','https://','//','#')): continue
-                  p=(base/Path(unquote(urlsplit(v).path))).as_posix()
-                  p=os.path.normpath(p).replace('\\','/')
-                  if p and p!='.' and not p.startswith('../'): refs.add(p)
-          Path('/tmp/v773-cssrefs.txt').write_text('\n'.join(sorted(refs))+'\n')
-          print('CSS refs',len(refs))
-          PY
-          xargs -r -P 24 -n 1 bash -c 'download_asset "$0"' < /tmp/v773-cssrefs.txt
-
-          JS_COUNT=$(find "$OUT" -type f -name '*.js' | wc -l)
-          CSS_COUNT=$(find "$OUT" -type f -name '*.css' | wc -l)
-          TOTAL=$(find "$OUT" -type f | wc -l)
-          echo "V773 recovered: $TOTAL files · $JS_COUNT JS · $CSS_COUNT CSS"
-          test "$JS_COUNT" -ge 50
-          test "$CSS_COUNT" -ge 10
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -145,12 +97,9 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Verify published entry points
+      - name: Verify emergency route
         shell: bash
         run: |
           set -e
           sleep 8
-          curl -fsSIL "${{ steps.deployment.outputs.page_url }}" | head -20
-          curl -fsSIL "${{ steps.deployment.outputs.page_url }}checkin/" | head -20
           curl -fsSIL "${{ steps.deployment.outputs.page_url }}emergency/" | head -20
-          curl -fsSIL "${{ steps.deployment.outputs.page_url }}recovered-v773/" | head -20
