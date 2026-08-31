@@ -1,0 +1,27 @@
+name: Import PRO X5 once
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/import-pro-x5-once.yml']
+  workflow_dispatch:
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Import private standalone into new Supabase
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 180 'https://wchzahvvujxxajlmxhqa.supabase.co/functions/v1/arlab-pro-x5-import-private' | tee /tmp/result.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open('/tmp/result.json'))
+          print(x)
+          assert x.get('ok') is True, x
+          PY
+          BASE='https://wchzahvvujxxajlmxhqa.supabase.co/storage/v1/object/public/arlab-pro-x5/'
+          curl -fsSIL "${BASE}index.html" | head -20
+          curl -fsSIL "${BASE}app.js" | head -20
+          curl -fsSIL "${BASE}style.css" | head -20
