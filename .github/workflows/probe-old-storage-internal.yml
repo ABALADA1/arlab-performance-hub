@@ -1,0 +1,25 @@
+name: Probe internal V773 storage copy
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/probe-old-storage-internal.yml']
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe old internal storage
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://xnlkjkrkkehplsbbziil.supabase.co/functions/v1/arlab-v773-storage-copy'
+          echo '--- LIST ---'
+          curl -sS --max-time 90 "$BASE?list=1&limit=10" | tee /tmp/list.json
+          echo
+          echo '--- COPY INDEX ---'
+          curl -sS --max-time 120 "$BASE?path=index-safe.html" | tee /tmp/copy.json
+          echo
+          echo '--- NEW STORAGE CHECK ---'
+          curl -sSIL --max-time 60 'https://wchzahvvujxxajlmxhqa.supabase.co/storage/v1/object/public/arlab-v773-static/index-safe.html' | head -20 || true
