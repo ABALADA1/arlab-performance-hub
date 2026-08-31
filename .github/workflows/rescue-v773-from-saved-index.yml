@@ -1,0 +1,45 @@
+name: Probe V773 from saved index
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/rescue-v773-from-saved-index.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recover saved index and probe exact URLs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L -fsS -H "Authorization: Bearer ${GH_TOKEN}" -H 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/ABALADA1/arlab-performance-hub/actions/artifacts/9752222645/zip' -o /tmp/rescue.zip
+          mkdir -p /tmp/rescue && unzip -q /tmp/rescue.zip -d /tmp/rescue
+          test -s /tmp/rescue/index-safe.html
+          python3 - <<'PY'
+          import re, subprocess, pathlib, time
+          html=pathlib.Path('/tmp/rescue/index-safe.html').read_text('utf-8',errors='ignore')
+          base='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
+          urls=[]
+          for m in re.finditer(r'(?:src|href)=["\']([^"\']+)["\']',html,re.I):
+              u=m.group(1).strip()
+              if u.startswith(base): full=u
+              elif re.match(r'^[A-Za-z0-9_.\-/]+\.(?:js|css)(?:\?.*)?$',u,re.I): full=base+u
+              else: continue
+              if full not in urls: urls.append(full)
+          print('TOTAL_REFS',len(urls))
+          ok=[]; bad=[]
+          for i,u in enumerate(urls[:40],1):
+              p=subprocess.run(['curl','-L','--connect-timeout','5','--max-time','10','-sS','-o','/tmp/asset','-w','%{http_code} %{size_download}',u],capture_output=True,text=True)
+              out=p.stdout.strip(); name=u.split('/')[-1]
+              print(i,out,name)
+              (ok if out.startswith('200 ') else bad).append(name)
+              time.sleep(.15)
+          print('PROBE_OK',len(ok),'OF',min(40,len(urls)))
+          print('OK_NAMES',*ok,sep='\n')
+          PY
