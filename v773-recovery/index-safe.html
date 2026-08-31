@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0d5bd7" />
+  <title data-v187-title="1" data-v641-title-lock="1">aplicación_equipo</title>
+  <script src="arlab-v641-title-lock.js?v=6410"></script>
+  <script src="arlab-v714-performance-pre.js?v=7140"></script>
+  <script src="arlab-v724-observer-governor.js?v=7240"></script>
+      <style>
+    #arlab-fast-splash{position:fixed;inset:0;z-index:999999;background:#f4f7fb;display:grid;place-items:center;transition:opacity .22s ease,visibility .22s ease}
+    #arlab-fast-splash.hide{opacity:0;visibility:hidden}
+    #arlab-fast-splash .box{display:grid;justify-items:center;gap:14px;color:#0d2b50;font-family:Arial,sans-serif}
+    #arlab-fast-splash .mark{width:58px;height:58px;border-radius:17px;background:linear-gradient(145deg,#4f8cff,#0d5bd7);display:grid;place-items:center;color:white;font-size:30px;font-weight:800;box-shadow:0 14px 30px rgba(13,91,215,.24)}
+    #arlab-fast-splash .bar{width:180px;height:5px;border-radius:99px;background:#dce6f3;overflow:hidden}
+    #arlab-fast-splash .bar::after{content:"";display:block;width:45%;height:100%;border-radius:99px;background:#0d5bd7;animation:arlabLoad132 .75s ease-in-out infinite alternate}
+    @keyframes arlabLoad132{from{transform:translateX(-20%)}to{transform:translateX(145%)}}
+  </style>
+  <link rel="stylesheet" href="arlab-v617-all.css?v=6810">
+  <link rel="stylesheet" href="arlab-v621-gps-acwr-wimu.css?safe=621" />
+  <link rel="stylesheet" href="arlab-v630-fixes.css?v=6310">
+  <link rel="stylesheet" href="arlab-v638-sidebar-freeze.css?v=6380">
+  <link rel="stylesheet" href="arlab-v639-strength-bilateral-rows.css?v=6390">
+  <link rel="stylesheet" href="arlab-v640-strength-toggle.css?v=6400">
+  <link rel="stylesheet" href="arlab-v641-availability-bluetooth.css?v=6410">
+  <link rel="stylesheet" href="arlab-v675-field-print-team-readable.css?v=6750">
+  <link rel="stylesheet" href="arlab-v681-wellness-campogram.css?v=6810">
+  <link rel="stylesheet" href="arlab-v682-field-print-compact.css?v=6820">
+  <link rel="stylesheet" href="arlab-v684-evolutivos-visual.css?v=6840">
+  <link rel="stylesheet" href="arlab-v687-planes-fullscreen.css?v=6870">
+  <link rel="stylesheet" href="arlab-v696-session-selected-clear.css?v=6990">
+  <link rel="stylesheet" href="arlab-v701-online-credentials.css?v=7010">
+  <link rel="stylesheet" href="arlab-v702-device-views.css?v=7020">
+  <link rel="stylesheet" href="arlab-v703-admin-access.css?v=7110">
+  <link rel="stylesheet" href="arlab-v704-player-view.css?v=7040">
+  <link rel="stylesheet" href="arlab-v705-login.css?v=7100">
+  <link rel="stylesheet" href="arlab-v706-checkin-player-cards-readable.css?v=7060">
+  <link rel="stylesheet" href="arlab-v707-titulos-semana-reales.css?v=7070">
+  <link rel="stylesheet" href="arlab-v708-checkout-campo-gimnasio-rpe.css?v=7080">
+  <link rel="stylesheet" href="arlab-v715-nutrition-player-objectives.css?v=7150">
+  <link rel="stylesheet" href="arlab-v712-valuation-performance.css?v=7120">
+  <link rel="stylesheet" href="arlab-v713-checkin-expanded.css?v=7130">
+  <link rel="stylesheet" href="arlab-v714-global-performance.css?v=7140">
+  <link rel="stylesheet" href="arlab-v716-day-participation-compact.css?v=7160">
+  <link rel="stylesheet" href="arlab-v717-nutrition-lab-study.css?v=7170">
+  <link rel="stylesheet" href="arlab-v718-session-performance.css?v=7180">
+  <link rel="stylesheet" href="arlab-v719-roster-click-fast.css?v=7190">
+</head>
+<body>
+  <div id="arlab-fast-splash"><div class="box"><div class="mark">A</div><strong>Abriendo ARLAB</strong><span>Cargando el resumen...</span><div class="bar"></div></div></div>
+  <div id="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">A</div>
+        <div>
+          <strong>ARLAB</strong>
+          <span>Athlete Hub</span>
+        </div>
+      </div>
+
+      <nav class="nav nav-structured" id="main-nav">
+        <button class="nav-item active" data-view="dashboard"><span>⌂</span><b>Resumen</b></button>
+        <details class="nav-group" open>
+          <summary><span>◎</span><b>Equipos y Jugadores</b><i>⌃</i></summary>
+          <button class="nav-item nav-sub" data-view="teams"><span>□</span><b>Equipos</b></button>
+          <button class="nav-item nav-sub" data-view="players"><span>○</span><b>Jugadores</b></button>
+          <button class="nav-item nav-sub" data-view="staff"><span>♙</span><b>Staff</b></button>
+        </details>
+        <details class="nav-group" open>
+          <summary><span>▦</span><b>Planificación</b><i>⌃</i></summary>
+          <button class="nav-item nav-sub" data-view="planning-calendar"><span>▦</span><b>Calendario</b></button>
+          <button class="nav-item nav-sub" data-view="macro"><span>▤</span><b>Macro</b></button>
+          <button class="nav-item nav-sub" data-view="micro"><span>▥</span><b>Microciclo</b></button>
+          <button class="nav-item nav-sub" data-view="week-typology"><span>▦</span><b>Tipología semanal</b></button>
+          <button class="nav-item nav-sub" data-view="planner"><span>▫</span><b>Día</b></button>
+          <button class="nav-item nav-sub" data-view="session-planning"><span>▶</span><b>Sesión</b></button>
+        </details>
+        <button class="nav-item" data-view="plans"><span>▧</span><b>Planes</b></button>
+        <button class="nav-item nav-tests-v152" data-view="tests-dashboard"><span>▥</span><b>Tests y valoraciones</b><i>NUEVO</i></button>
+        <details class="nav-group">
+          <summary><span>▣</span><b>Bibliotecas</b><i>⌃</i></summary>
+          <button class="nav-item nav-sub" data-view="force-library"><span>＋</span><b>Biblioteca de fuerza</b></button>
+          <button class="nav-item nav-sub" data-view="field-library"><span>⌗</span><b>Biblioteca de campo</b></button>
+        </details>
+        <details class="nav-group">
+          <summary><span>▥</span><b>Reportes</b><i>⌃</i></summary>
+          <button class="nav-item nav-sub" data-view="wellness"><span>♡</span><b>Wellness</b></button>
+          <button class="nav-item nav-sub" data-view="availability"><span>◔</span><b>Disponibilidad</b></button>
+          <button class="nav-item nav-sub v190-report-nav v190-exposure-nav" data-view="exposure-report-v190"><span>◷</span><b>Exposición</b></button>
+          <button class="nav-item nav-sub" data-view="gym-report"><span>🏋</span><b>Gimnasio</b></button>
+          <details class="v192-field-subgroup v324-field-subgroup" open>
+            <summary><span>⌗</span><b>Campo</b><i>⌃</i></summary>
+            <button class="nav-item nav-sub v324-field-report" data-view="field-daily-report-v300"><span>▥</span><b>DAILY REPORT</b></button>
+            <button class="nav-item nav-sub v324-field-report" data-view="field-evolution-report-v300"><span>↗</span><b>EVOLUTION REPORT</b></button>
+            <button class="nav-item nav-sub v324-field-report" data-view="field-matchday-report-v300"><span>⚽</span><b>MATCH DAY REPORT</b></button>
+            <button class="nav-item nav-sub" data-view="field-weekly-report-v550"><span>▤</span><b>REPORTE SEMANAL</b></button>
+            <button class="nav-item nav-sub" data-view="load-volume-report-v200"><span>▥</span><b>Carga mensual</b></button>
+            <button class="nav-item nav-sub" data-view="load-calculator-v105"><span>∑</span><b>Calculadora de carga</b></button>
+            <button class="nav-item nav-sub" data-view="gps-acwr-v621"><span>⌁</span><b>Reporte GPS y ACWR</b></button>
+            <button class="nav-item nav-sub" data-view="task-book-report-v174"><span>▦</span><b>Libro de tareas nuevo</b></button>
+          </details>
+          <button class="nav-item nav-sub v285-heart-nav" data-view="heart-rate-report-v285"><span>♥</span><b>Frecuencia cardiaca</b></button>
+          <button class="nav-item nav-sub" data-view="diary"><span>☷</span><b>Diario</b></button>
+          <button class="nav-item nav-sub" data-view="tables"><span>▦</span><b>Tabla</b></button>
+          <button class="nav-item nav-sub" data-view="weekly-report"><span>W</span><b>Informe semana</b></button>
+          <button class="nav-item nav-sub" data-view="monthly-report"><span>M</span><b>Informe mes</b></button>
+        </details>
+        <details class="nav-group">
+          <summary><span>♥</span><b>Wellness y estado</b><i>⌃</i></summary>
+          <button class="nav-item nav-sub" data-view="checkin"><span>✓</span><b>Check-In</b></button>
+          <button class="nav-item nav-sub" data-view="checkout"><span>↗</span><b>Check-Out</b></button>
+          <button class="nav-item nav-sub" data-view="wellness"><span>♡</span><b>Wellness</b></button>
+        </details>
+        <details class="nav-group">
+          <summary><span>◉</span><b>Nutrición</b><i>⌃</i></summary>
+          <button class="nav-item nav-sub" data-view="nutrition-food"><span>◫</span><b>Control de alimentos</b></button>
+          <button class="nav-item nav-sub" data-view="nutrition-hydration"><span>◒</span><b>Líquidos</b></button>
+        </details>
+        <details class="nav-group">
+          <summary><span>✚</span><b>Salud</b><i>⌃</i></summary>
+          <button class="nav-item nav-sub" data-view="injuries"><span>＋</span><b>Lesiones</b></button>
+          <button class="nav-item nav-sub" data-view="physiotherapy"><span>⊕</span><b>Fisioterapia</b></button>
+        </details>
+        <details class="nav-group">
+          <summary><span>⌁</span><b>GPS</b><i>⌃</i></summary>
+          <button class="nav-item nav-sub" data-view="gps-cut"><span>✂</span><b>Cortar sesiones</b></button>
+          <button class="nav-item nav-sub" data-view="gps-view"><span>⌁</span><b>Visualizar sesiones</b></button>
+          <button class="nav-item nav-sub nav-adi-v307" data-view="gps-adi"><span>◈</span><b>ADI</b><i>NEW</i></button>
+          <button class="nav-item nav-sub" data-view="mediacoach"><span>◫</span><b>MEDIACOACH</b><i>NEW</i></button>
+          <button class="nav-item nav-sub" data-view="gps-extras"><span>∿</span><b>EXTRAS</b><i>NEW</i></button>
+          <button class="nav-item nav-sub" data-view="gps-hrv"><span>♥</span><b>HRV</b></button>
+          <button class="nav-item nav-sub" data-view="gps-coi"><span>◉</span><b>COI</b></button>
+          <button class="nav-item nav-sub" data-view="gps-cod"><span>↯</span><b>COD</b></button>
+          <button class="nav-item nav-sub" data-view="gps-steps"><span>⇥</span><b>STEPS</b></button>
+          <button class="nav-item nav-sub" data-view="gps-mes"><span>≈</span><b>MES</b></button>
+        </details>
+        <button class="nav-item" data-view="database"><span>▤</span><b>BBDD</b></button>
+        <details class="nav-group" open>
+          <summary><span>⚙</span><b>Configuración</b><i>⌃</i></summary>
+          <button class="nav-item nav-sub" data-view="settings"><span>⚙</span><b>Ajustes</b></button>
+          <button class="nav-item nav-sub" data-view="gps-monitor-settings"><span>◫</span><b>Monitores y GPS</b></button>
+          <button class="nav-item nav-sub" data-view="variable-settings"><span>∑</span><b>Variables</b><i>NEW</i></button>
+          <button class="nav-item nav-sub" data-view="field-coordinate-settings"><span>⌖</span><b>Coordenadas campos</b><i>NEW</i></button>
+          <button class="nav-item nav-sub" data-view="dropdowns"><span>⌄</span><b>Desplegables</b></button>
+          <button class="nav-item nav-sub" data-view="seasons"><span>▣</span><b>Temporadas</b></button>
+          <button class="nav-item nav-sub" data-view="imports"><span>⇧</span><b>Importación</b></button>
+        </details>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="sync-dot"><i id="sync-indicator"></i><span id="sync-label">Modo local</span></div>
+        <small>Rendimiento · Salud · Seguimiento</small>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button sidebar-toggle-button" id="menu-toggle" aria-label="Mostrar u ocultar menú" aria-expanded="true" title="Mostrar u ocultar menú">☰</button>
+          <div>
+            <h1 id="page-title">Resumen</h1>
+            <p id="page-subtitle">Vista global del área de rendimiento</p>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <div class="topbar-history-v422" role="group" aria-label="Deshacer y rehacer">
+            <button class="button button-soft history-button-v422" id="global-undo-v422" type="button" title="Deshacer (Ctrl+Z)" disabled><span aria-hidden="true">↶</span><b>Deshacer</b></button>
+            <button class="button button-soft history-button-v422" id="global-redo-v422" type="button" title="Rehacer (Ctrl+Y / Ctrl+Mayús+Z)" disabled><span aria-hidden="true">↷</span><b>Rehacer</b></button>
+          </div>
+          <label class="global-search">
+            <span>⌕</span>
+            <input id="global-search" placeholder="Buscar jugador..." autocomplete="off" />
+            <div class="search-results hidden" id="search-results"></div>
+          </label>
+          <button class="button button-soft topbar-export-v68" id="screen-export-csv" title="Exportar esta pantalla para otra instalación ARLAB">⇩ Exportar CSV</button>
+          <button class="button button-primary" id="quick-import">+ Importar</button>
+        </div>
+      </header>
+
+      <section id="content" class="content"></section>
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toast-stack"></div>
+  <div class="modal-layer hidden" id="modal-layer" aria-hidden="true"></div>
+
+  <template id="modal-template">
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="modal-card" role="dialog" aria-modal="true">
+      <header class="modal-header">
+        <div>
+          <h2 class="modal-title"></h2>
+          <p class="modal-subtitle"></p>
+        </div>
+        <button class="icon-button" data-close-modal aria-label="Cerrar">×</button>
+      </header>
+      <div class="modal-body"></div>
+      <footer class="modal-footer"></footer>
+    </section>
+  </template>
+<script>
+  // ARLAB V336 · un único servidor. /api/state y /api/media permanecen en el mismo origen.
+  // La BBDD portable se guarda en state.json y los QUL se almacenan por fragmentos vía /api/media.
+  (function(){
+    const p=new URLSearchParams(location.search).get('dataport');
+    window.ARLAB_DATA_STORE_ORIGIN=location.origin;
+    window.ARLAB_DATA_STORE_PORT=location.port||'';
+    window.ARLAB_JSON_STORE_ORIGIN=p?`http://127.0.0.1:${p}`:location.origin;
+  })();
+  </script>
+  <script src="arlab-v679-json-store-router.js?v=6920"></script>
+  <script src="arlab-v617-performance-bootstrap.js?safe=617" defer></script>
+  <script src="arlab-v605-fluid-runtime.js?safe=617" defer></script>
+  <script src="arlab-v268-performance-core.js?safe=617" defer></script>
+  <script src="arlab-v692-performance-stability.js?v=6920" defer></script>
+  <script src="arlab-v672-field-editor-durable.js?v=6920" defer></script>
+  <script src="arlab-v201-fast-start.js?safe=617" defer></script>
+  <script src="arlab-v138-bundle.js?v=6970" defer></script>
+  <script src="arlab-v693-adaptive-performance.js?v=6930" defer></script>
+  <script src="arlab-v697-interaction-consistency.js?v=7120" defer></script>
+  <script src="arlab-v698-session-scroll-stability.js?v=6980" defer></script>
+  <script src="arlab-v696-session-selected-clear.js?v=7120" defer></script>
+  <script src="arlab-v144-macro-media.js?safe=617" defer></script>
+  <script src="micro-v142-clean.js?safe=617" defer></script>
+  <script src="arlab-v143-final.js?safe=617" defer></script>
+  <script src="macro-v150-v90-verificada.js?safe=617" defer></script>
+  <script src="tests-v152-dashboard.js?safe=617" defer></script>
+  <script src="annotations-v152.js?v=6930" defer></script>
+  <script src="tindeq-v154-rfd.js?safe=617" defer></script>
+  <script src="spro-monitor-catalog-v156.js?safe=617" defer></script>
+  <script src="wimu-formula-catalog-v167.js?safe=617" defer></script>
+  <script src="gps-spro-v162.js?safe=617" defer></script>
+  <script src="strength-v158-session-equation.js?safe=617" defer></script>
+  <script src="strength-v160-muscle-equations-matrix.js?safe=617" defer></script>
+  <script src="arlab-v161-day-session-library.js?safe=617" defer></script>
+  <script src="arlab-v162-session-libraries-checkin-equation.js?safe=617" defer></script>
+  <script src="arlab-v163-visible-fixes.js?safe=617" defer></script>
+  <script src="arlab-v164-day-gps-libraries.js?v=7240" defer></script>
+  <script src="arlab-v165-polish.js?safe=617" defer></script>
+  <script src="arlab-v166-fixes.js?safe=617" defer></script>
+  <script src="gps-formulas-v167.js?safe=617" defer></script>
+  <script src="gps-profile-relative-v168.js?safe=617" defer></script>
+  <script src="arlab-v169-wellness-day.js?safe=617" defer></script>
+  <script src="arlab-v170-macro-day-gps.js?safe=617" defer></script>
+  <script src="arlab-v171-gps-individual-cuts-day.js?safe=617" defer></script>
+  <script src="arlab-v172-hr-session-colors.js?safe=617" defer></script>
+  <script src="arlab-v173-strength-equation-pdf-import.js?safe=617" defer></script>
+  <script src="arlab-v174-session-equation-taskbook.js?safe=617" defer></script>
+  <script src="arlab-v175-equation-pdf-cards.js?safe=617" defer></script>
+  <script src="arlab-v177-checkin-subcharacter-cards.js?safe=617" defer></script>
+  <script src="arlab-v182-checkin-order.js?safe=617" defer></script>
+  <script src="arlab-v183-checkin-edit-staff.js?safe=617" defer></script>
+  <script src="arlab-v184-day-diagram-pdf.js?safe=617" defer></script>
+  <script src="arlab-v186-session-drawings-print-filters.js?safe=617" defer></script>
+  <script src="arlab-v187-print-readable.js?safe=617" defer></script>
+  <script src="arlab-v188-player-field-reports.js?safe=631" defer></script>
+  <script src="arlab-v189-print-sociogram.js?safe=617" defer></script>
+  <script src="arlab-v190-reports-editor-import.js?safe=631" defer></script>
+  <script src="arlab-v191-player-groups.js?safe=617" defer></script>
+  <script src="arlab-v192-field-nav.js?safe=631" defer></script>
+  <script src="arlab-v193-session-order-socio.js?safe=617" defer></script>
+  <script src="arlab-v195-team-evolution-resistance.js?safe=617" defer></script>
+  <script src="arlab-v198-data-integrity-tindeq.js?safe=617" defer></script>
+  <script src="arlab-v199-checkin-date.js?safe=617" defer></script>
+  <script src="arlab-v200-integrity-load-report.js?safe=617" defer></script>
+  <script src="arlab-v202-objectives.js?safe=617" defer></script>
+  <script src="arlab-v203-data-evolution-objectives.js?safe=617" defer></script>
+  <script src="arlab-v204-corrections.js?safe=617" defer></script>
+  <script src="arlab-v206-micro-week-socio-gps.js?safe=617" defer></script>
+  <script src="arlab-v207-macro-sessions-load-gps.js?safe=617" defer></script>
+  <script src="arlab-v208-gps-metrics.js?safe=617" defer></script>
+  <script src="arlab-v209-day-report-detail.js?safe=617" defer></script>
+  <script src="arlab-v210-strength-typology-sync-gps.js?safe=617" defer></script>
+  <script src="arlab-v211-week-stimulus-polish.js?safe=617" defer></script>
+  <script src="arlab-v212-gps-labels-monthly.js?safe=617" defer></script>
+  <script src="arlab-v213-family-coi-day.js?safe=617" defer></script>
+  <script src="arlab-v214-day-spro-minutes.js?safe=617" defer></script>
+  <script src="gps-qul-parser-v215.js?safe=617" defer></script>
+  <script src="gps-qul-parser-v277.js?safe=617" defer></script>
+  <script src="arlab-v215-gps-social-strength-hrv.js?safe=617" defer></script>
+  <script src="arlab-v217-real-fixes.js?safe=617" defer></script>
+  <script src="arlab-v218-strength-edit-points.js?safe=617" defer></script>
+  <script src="arlab-v223-strength-points-persistence.js?safe=617" defer></script>
+  <script src="arlab-v225-week-pdf-compact.js?safe=617" defer></script>
+  <script src="arlab-v227-gym-exact-points.js?safe=617" defer></script>
+  <script src="arlab-v231-socio-free.js?safe=617" defer></script>
+  <script src="arlab-v237-wellness-delete-day.js?safe=617" defer></script>
+  <script src="arlab-v238-strength-muscle-radars.js?safe=617" defer></script>
+  <script src="arlab-v240-report-print-clean.js?safe=617" defer></script>
+  <script src="arlab-v243-gym-load-detail.js?safe=617" defer></script>
+  <script src="arlab-v244-gps-taskbook.js?safe=617" defer></script>
+  <script src="arlab-v245-session-types.js?safe=617" defer></script>
+  <script src="arlab-v246-session-date-groups.js?safe=617" defer></script>
+  <script src="arlab-v247-session-structure.js?safe=617" defer></script>
+  <script src="arlab-v248-session-order.js?safe=617" defer></script>
+  <script src="arlab-v253-taskbook-dashboard.js?safe=617" defer></script>
+  <script src="arlab-v250-match-event-source.js?safe=617" defer></script>
+  <script src="arlab-v252-gps-exclusions.js?safe=617" defer></script>
+  <script src="arlab-v254-report-folders.js?safe=617" defer></script>
+  <script src="arlab-v256-week-report-adjusted.js?safe=617" defer></script>
+  <script src="arlab-v262-day-report-team-player.js?safe=617" defer></script>
+  <script src="arlab-v263-month-report-team-player.js?safe=617" defer></script>
+  <script src="arlab-v264-menu-otros.js?safe=617" defer></script>
+  <script src="arlab-v265-session-name-fix.js?safe=617" defer></script>
+  <script src="arlab-v270-gps-performance.js?safe=617" defer></script>
+  <script src="arlab-v276-gps-import.js?v=7250" defer></script>
+  <script src="arlab-v277-qul-all-sensors.js?safe=617" defer></script>
+  <script src="arlab-v275-bench-squat-test.js?safe=617" defer></script>
+  <script src="arlab-v280-cmj.js?safe=617" defer></script>
+  <script src="arlab-v281-skinfolds.js?safe=617" defer></script>
+  <script src="arlab-v282-bench-squat-history.js?safe=617" defer></script>
+  <script src="arlab-v283-rfd.js?safe=617" defer></script>
+  <script src="arlab-v284-checkinout-excel.js?safe=617" defer></script>
+  <script src="arlab-v285-heart-rate-report.js?safe=617" defer></script>
+  <script src="arlab-v286-runtime.js?safe=617" defer></script>
+  <script src="arlab-v545-cache-refresh.js?safe=617" defer></script>
+  <script src="arlab-v287-gps-complete-critical.js?safe=617" defer></script>
+  <script src="arlab-v291-gps-unified.js?safe=617" defer></script>
+  <script src="arlab-v507-gps-monitor-engine.js?safe=617" defer></script>
+  <script src="arlab-v508-gps-metrics.js?safe=617" defer></script>
+  <script src="arlab-v299-gps-fast-visual.js?safe=617" defer></script>
+  <script src="arlab-v300-reports-gps-strict.js?safe=617" defer></script>
+  <script src="arlab-v547-cut-source-of-truth.js?safe=617" defer></script>
+  <script src="arlab-v302-field-reports-pro.js?safe=617" defer></script>
+  <script src="arlab-v303-gps-visual-polish.js?safe=617" defer></script>
+  <script src="arlab-v304-monitor-variable-explorer.js?safe=617" defer></script>
+  <script src="arlab-v310-adi-video.js?safe=617" defer></script>
+  <script src="arlab-v309-gps-sessions-explorer.js?safe=617" defer></script>
+  <script src="arlab-v311-stability.js?safe=617" defer></script>
+  <script src="arlab-v316-gps-persistence.js?safe=617" defer></script>
+  <script src="arlab-v321-report-adi-fixes.js?safe=617" defer></script>
+  <script src="arlab-v324-field-reports-restore.js?safe=617" defer></script>
+  <script src="arlab-v326-database-total.js?safe=617" defer></script>
+  <script src="arlab-v332-recovery-safe.js?safe=617" defer></script>
+  <script src="arlab-v336-json-database.js?v=6930" defer></script>
+  <script src="arlab-v345-bbdd-real.js?safe=617" defer></script>
+  <script src="arlab-v349-gps-preprocessed.js?v=7250" defer></script>
+  <script src="arlab-v352-gps-fastcache.js?safe=692" defer></script>
+  <script src="arlab-v353-gps-autostart.js?v=7250" defer></script>
+  <script src="arlab-v377-variable-registry.js?safe=617" defer></script>
+  <script src="arlab-v378-field-coordinates.js?safe=617" defer></script>
+  <script src="arlab-v352-mediacoach.js?safe=617" defer></script>
+  <script src="arlab-v354-gps-unified-fast.js?safe=692" defer></script>
+  <script src="arlab-v355-bbdd-gps-raw-repair.js?safe=692" defer></script>
+  <script src="arlab-v361-dropdowns-repair.js?safe=692" defer></script>
+  <script src="arlab-v361-availability-final.js?safe=617" defer></script>
+  <script src="arlab-v362-session-event-ux.js?safe=617" defer></script>
+  <script src="arlab-v363-heart-rate-modes.js?safe=617" defer></script>
+  <script src="arlab-v369-daily-report-configurable.js?safe=619" defer></script>
+  <script src="arlab-v369-evolution-report-configurable.js?safe=617" defer></script>
+  <script src="arlab-v366-report-router-final.js?safe=617" defer></script>
+  <script src="arlab-v373-matchday-report.js?safe=617" defer></script>
+  <script src="arlab-v367-report-router-final.js?safe=617" defer></script>
+  <script src="arlab-v371-report-fix.js?safe=617" defer></script>
+  <script src="arlab-v373-matchday-router.js?safe=617" defer></script>
+  <script src="arlab-v380-field-coordinates-router.js?safe=617" defer></script>
+  <script src="arlab-v382-field-coordinates-hardfix.js?safe=617" defer></script>
+  <script src="arlab-v383-mediacoach-router.js?safe=617" defer></script>
+  <script src="arlab-v387-player-profile.js?safe=617" defer></script>
+  <script src="arlab-v388-md-macro-sessions.js?safe=617" defer></script>
+  <script src="arlab-v389-player-longitudinal-excel.js?safe=617" defer></script>
+  <script src="arlab-v390-kpi-team-profile.js?safe=617" defer></script>
+  <script src="arlab-v391-editable-longitudinal.js?safe=617" defer></script>
+  <script src="arlab-v392-player-report-team-pro.js?safe=617" defer></script>
+  <script src="arlab-v393-table-player-suite.js?safe=617" defer></script>
+  <script src="arlab-v394-player-report-table-import-fix.js?safe=617" defer></script>
+  <script src="arlab-v395-player-report-sheet-separation.js?safe=617" defer></script>
+  <script src="arlab-v396-player-sheet-report-pro.js?safe=617" defer></script>
+  <script src="arlab-v398-task-editor-team-fix.js?safe=617" defer></script>
+  <script src="arlab-v400-table-task-fixes.js?safe=617" defer></script>
+  <script src="arlab-v404-task-editor-exact.js?safe=617" defer></script>
+  <script src="arlab-v407-field-editor-exact-icons.js?safe=617" defer></script>
+  <script src="arlab-v412-macro-context-final.js?safe=617" defer></script>
+  <script src="arlab-v415-macro-sticky-event-clipboard.js?safe=617" defer></script>
+  <script src="arlab-v416-macro-objectives-contents.js?safe=617" defer></script>
+  <script src="arlab-v424-macro-planes.js?safe=617" defer></script>
+  <script src="arlab-v425-macro-stable.js?safe=617" defer></script>
+  <script src="arlab-v431-field-editor-multiselect.js?safe=686" defer></script>
+  <script src="arlab-v433-task-editor-final.js?safe=617" defer></script>
+  <script src="arlab-v434-macro-fast-comments-availability.js?safe=617" defer></script>
+  <script src="arlab-v439-day-comments.js?safe=617" defer></script>
+  <script src="arlab-v440-day-content-comments.js?safe=617" defer></script>
+  <script src="arlab-v443-day-export-exact.js?safe=685" defer></script>
+  <script src="arlab-v441-macro-fast-copy-day.js?safe=617" defer></script>
+  <script src="arlab-v453-session-unified.js?safe=617" defer></script>
+  <script src="arlab-v458-strength-persistent-controls.js?safe=617" defer></script>
+  <script src="arlab-v457-macro-action-click-fix.js?safe=617" defer></script>
+  <script src="arlab-v460-valuation-macro-action-meta.js?safe=617" defer></script>
+  <script src="arlab-v461-strength-unified-sessions.js?safe=617" defer></script>
+  <script src="arlab-v463-day-week-summary.js?safe=617" defer></script>
+  <script src="arlab-v465-macro-action-color-evaluation.js?safe=617" defer></script>
+  <script src="arlab-v466-plan-day-polish.js?safe=617" defer></script>
+  <script src="arlab-v470-day-layout-compact.js?safe=617" defer></script>
+  <script src="arlab-v471-macro-action-direct.js?safe=617" defer></script>
+  <script src="arlab-v472-field-auto-library.js?safe=617" defer></script>
+  <script src="arlab-v481-field-library-visual-persistence.js?safe=617" defer></script>
+  <script src="arlab-v482-stability-print-layout.js?safe=617" defer></script>
+  <script src="arlab-v490-day-participation-8.js?safe=617" defer></script>
+  <script src="arlab-v498-day-session-count.js?safe=617" defer></script>
+  <script src="arlab-v493-contents-video.js?safe=617" defer></script>
+  <script src="arlab-v500-stability.js?safe=617" defer></script>
+  <script src="arlab-v505-session-integrity.js?safe=617" defer></script>
+  <script src="arlab-v509-valuation-integrity.js?safe=617" defer></script>
+  <script src="arlab-v514-session-core.js?safe=617" defer></script>
+  <script src="arlab-v531-valuation-report-fixes.js?safe=617" defer></script>
+  <script src="arlab-v528-player-report-builder.js?safe=617" defer></script>
+  <script src="arlab-v533-report-header-kpi-copy.js?safe=617" defer></script>
+  <script src="arlab-v534-report-team-table-upgrades.js?safe=617" defer></script>
+  <script src="arlab-v535-player-report-cover.js?safe=617" defer></script>
+  <script src="arlab-v536-team-table-ux.js?safe=617" defer></script>
+  <script src="arlab-v537-team-table-xlsx.js?safe=617" defer></script>
+  <script src="arlab-v539-report-media-viewer.js?safe=617" defer></script>
+  <script src="arlab-v542-report-cuts-hr-pdf.js?safe=617" defer></script>
+  <script src="arlab-v543-table-modules-team-report.js?safe=617" defer></script>
+  <script src="arlab-v544-team-report-plans-media.js?safe=617" defer></script>
+  <script src="arlab-v548-readable-player-valuation-clean.js?safe=617" defer></script>
+  <script src="arlab-v549-team-render-lock.js?safe=617" defer></script>
+  <script src="arlab-v550-weekly-field-report.js?safe=617" defer></script>
+  <script src="arlab-v554-stability-runtime.js?safe=617" defer></script>
+  <script src="arlab-v560-player-table-report-actions.js?safe=617" defer></script>
+  <script src="arlab-v561-valuation-core-controller.js?safe=617" defer></script>
+  <script src="arlab-v562-valuation-delete-integrity.js?safe=617" defer></script>
+  <script src="arlab-v563-dropdown-collapse.js?safe=617" defer></script>
+  <script src="arlab-v564-team-photo-stable.js?safe=617" defer></script>
+  <script src="arlab-v565-extras-critical-curves.js?safe=617" defer></script>
+  <script src="arlab-v569-macro-event-layout.js?safe=617" defer></script>
+  <script src="arlab-v571-extras-availability-team-clean.js?safe=617" defer></script>
+  <script src="arlab-v573-team-monitor-import.js?safe=617" defer></script>
+  <script src="arlab-v574-extras-multi-clubs.js?v=6930" defer></script>
+  <script src="arlab-v579-task-optimizer-pro.js?safe=617" defer></script>
+  <script src="arlab-v585-task-inline-editors.js?safe=617" defer></script>
+  <script src="arlab-v586-team-comments-diary.js?safe=617" defer></script>
+  <script src="arlab-v587-task-compact-editor.js?safe=617" defer></script>
+  <script src="arlab-v588-session-print.js?safe=682" defer></script>
+  <script src="arlab-v683-wellness-jpg-only.js?v=6830" defer></script>
+  <script src="arlab-v684-evolutivos-visual.js?v=6930" defer></script>
+  <script src="arlab-v688-wellness-jpg-green-only.js?v=6880" defer></script>
+  <script src="arlab-v691-gps-persistence-guard.js?v=6920" defer></script>
+  <script src="arlab-v589-space-print-fix.js?safe=617" defer></script>
+  <script src="arlab-v593-team-test-comparison.js?safe=617" defer></script>
+  <script src="arlab-v591-visual-fixes.js?safe=617" defer></script>
+  <script src="arlab-v594-print-player-assets.js?safe=617" defer></script>
+  <script src="arlab-v595-table-white-headings.js?v=7240" defer></script>
+  <script src="arlab-v598-test-attempt-explorer.js?safe=617" defer></script>
+  <script src="arlab-v600-performance-runtime.js?safe=617" defer></script>
+  <script src="arlab-v601-strength-editor-performance.js?safe=617" defer></script>
+  <script src="arlab-v603-muscle-points-performance.js?safe=617" defer></script>
+  <script src="arlab-v604-interaction-runtime.js?safe=617" defer></script>
+  <script src="arlab-clean-version-labels.js?safe=617" defer></script>
+  <script src="arlab-v610-import-ui.js?safe=617" defer></script>
+  <script src="arlab-v612-strength-sessions-report.js?safe=617" defer></script>
+  <script src="arlab-v617-runtime.js?safe=617" defer></script>
+  <script src="arlab-v621-gps-acwr-wimu.js?safe=621" defer></script>
+  <script src="arlab-v623-report-menu-stability.js?v=6230" defer></script>
+  <script src="arlab-v626-tests-hub-summary.js?v=6260" defer></script>
+  <script src="arlab-v627-menu-reportes-hardlock.js?v=6270" defer></script>
+  <script src="arlab-v628-strength-side-dose.js?v=6280" defer></script>
+  <script src="arlab-v629-fixes.js?v=6290" defer></script>
+  <script src="arlab-v630-fixes.js?v=6310" defer></script>
+  <script src="arlab-v636-sidebar-lock.js?v=6360" defer></script>
+  <script src="arlab-v638-sidebar-freeze.js?v=6380" defer></script>
+  <script src="arlab-v640-strength-toggle.js?v=6400" defer></script>
+  <script src="arlab-v643-multi-bluetooth.js?v=6530" defer></script>
+  <script src="arlab-v654-systems-interactive.js?v=6950" defer></script>
+  <script src="arlab-v649-bluetooth-history.js?v=6490" defer></script>
+  <script src="arlab-v663-day-event-staff-roles.js?v=6630" defer></script>
+  <script src="arlab-v664-gym-sessions-print-view.js?v=6800" defer></script>
+  <script src="arlab-v665-day-inline-staff-roles.js?v=6650" defer></script>
+  <script src="arlab-v666-dropdown-scroll-stability.js?v=6920" defer></script>
+  <script src="arlab-v668-field-editor-save.js?v=6920" defer></script>
+  <script src="arlab-v669-json-import-hardfix.js?v=7000" defer></script>
+  <script src="arlab-v671-refresh-memory-guard.js?v=6920" defer></script>
+  <script src="arlab-v674-field-editor-exact-save.js?v=6920" defer></script>
+  <script src="arlab-v701-online-credentials.js?v=7010" defer></script>
+  <script src="arlab-v702-device-views.js?v=7020" defer></script>
+  <script src="arlab-v703-admin-access.js?v=7110" defer></script>
+  <script src="arlab-v704-player-view.js?v=7040" defer></script>
+  <script src="arlab-v705-login.js?v=7100" defer></script>
+  <script src="arlab-v707-titulos-semana-reales.js?v=7120" defer></script>
+  <script src="arlab-v708-checkout-campo-gimnasio-rpe.js?v=7080" defer></script>
+  <script src="arlab-v715-nutrition-player-objectives.js?v=7150" defer></script>
+  <script src="arlab-v712-valuation-performance.js?v=7120" defer></script>
+  <script src="arlab-v713-checkin-expanded.js?v=7130" defer></script>
+  <script src="arlab-v714-global-performance.js?v=7140" defer></script>
+  <script src="arlab-v716-day-participation-compact.js?v=7160" defer></script>
+  <script src="arlab-v717-nutrition-lab-study.js?v=7170" defer></script>
+  <script src="arlab-v718-session-performance.js?v=7180" defer></script>
+  <script src="arlab-v719-roster-click-fast.js?v=7190" defer></script>
+  <script src="arlab-v720-delay-general-fix.js?v=7200" defer></script>
+  <script src="arlab-v721-delay-targeted.js?v=7210" defer></script>
+  <script src="arlab-v724-performance-final.js?v=7240" defer></script>
+</body>
+</html>
+
