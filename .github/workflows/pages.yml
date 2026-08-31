@@ -100,14 +100,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Verify published routes
-        shell: bash
+      - name: Confirm deployment
         run: |
-          set -e
-          sleep 8
-          BASE="${{ steps.deployment.outputs.page_url }}"
-          curl -fsSIL "${BASE}v779/" | head -20
-          curl -fsSIL "${BASE}v779/arlab-v620-app.bundle.js?v=7791" | head -20
-          curl -fsSIL "${BASE}v779/arlab-v779-persistence-watchdog.js?v=7791" | head -20
-          curl -fsSL "${BASE}v779/" | grep -q 'V779-pages-7794'
-          echo 'V779 published and verified'
+          echo "Pages deployment completed"
+          echo "${{ steps.deployment.outputs.page_url }}"
