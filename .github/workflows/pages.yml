@@ -31,6 +31,7 @@ jobs:
           rm -rf site
           mkdir -p site/v710
           cp -R checkin site/checkin
+          cp -R emergency site/emergency
 
           python3 - <<'PY'
           from pathlib import Path
@@ -117,3 +118,4 @@ jobs:
           sleep 8
           curl -fsSIL "${{ steps.deployment.outputs.page_url }}" | head -20
           curl -fsSIL "${{ steps.deployment.outputs.page_url }}checkin/" | head -20
+          curl -fsSIL "${{ steps.deployment.outputs.page_url }}emergency/" | head -20
