@@ -1,0 +1,87 @@
+name: Rescue ARLAB V773 assets
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/rescue-v773.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rescue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch V773 entry point
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p rescue
+          BASE='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
+          CODE=$(curl -L --retry 3 --retry-delay 2 --connect-timeout 15 --max-time 90 -sS -w '%{http_code}' -o rescue/index-safe.html "${BASE}index-safe.html" || true)
+          echo "HTTP_STATUS=$CODE" | tee rescue/status.txt
+          echo "INDEX_BYTES=$(wc -c < rescue/index-safe.html 2>/dev/null || echo 0)" | tee -a rescue/status.txt
+          if [ "$CODE" != "200" ]; then
+            echo 'Old Storage did not return the index.'
+            exit 0
+          fi
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, urllib.request, urllib.error, time
+
+          base='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
+          root=Path('rescue')
+          html=(root/'index-safe.html').read_text('utf-8',errors='ignore')
+          refs=[]
+          for m in re.finditer(r'(?:src|href)=["\']([^"\']+)["\']', html, re.I):
+              u=m.group(1).strip()
+              if u.startswith(base):
+                  rel=u[len(base):].split('?',1)[0]
+              elif re.match(r'^[A-Za-z0-9_.\-/]+\.(?:js|css|json|png|jpg|jpeg|webp|svg)(?:\?.*)?$',u,re.I):
+                  rel=u.split('?',1)[0]
+              else:
+                  continue
+              if rel and rel not in refs: refs.append(rel)
+          ok=[]; bad=[]
+          for i,rel in enumerate(refs,1):
+              out=root/rel
+              out.parent.mkdir(parents=True,exist_ok=True)
+              url=base+rel
+              try:
+                  req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0','Cache-Control':'max-age=31536000'})
+                  with urllib.request.urlopen(req,timeout=45) as r:
+                      data=r.read()
+                      if r.status==200 and data:
+                          out.write_bytes(data); ok.append((rel,len(data)))
+                      else: bad.append((rel,r.status))
+              except Exception as e:
+                  bad.append((rel,str(e)[:120]))
+              if i%25==0: print('progress',i,'/',len(refs),'ok',len(ok),'bad',len(bad))
+          (root/'manifest.txt').write_text('\n'.join(f'{n}\t{s}' for n,s in ok),encoding='utf-8')
+          (root/'failed.txt').write_text('\n'.join(f'{n}\t{e}' for n,e in bad),encoding='utf-8')
+          print('REFERENCES',len(refs),'OK',len(ok),'FAILED',len(bad))
+          PY
+
+      - name: Summarize rescue
+        shell: bash
+        run: |
+          echo '--- status ---'
+          cat rescue/status.txt || true
+          echo '--- counts ---'
+          echo "files=$(find rescue -type f | wc -l)"
+          echo "bytes=$(du -sb rescue | awk '{print $1}')"
+          echo "ok=$(wc -l < rescue/manifest.txt 2>/dev/null || echo 0)"
+          echo "failed=$(wc -l < rescue/failed.txt 2>/dev/null || echo 0)"
+          head -30 rescue/failed.txt 2>/dev/null || true
+
+      - name: Upload rescued V773
+        uses: actions/upload-artifact@v4
+        with:
+          name: arlab-v773-rescue
+          path: rescue
+          retention-days: 7
