@@ -1,0 +1,41 @@
+name: Publish saved V773 index
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publish-v773-index.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recover saved V773 index artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L -fsS -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/ABALADA1/arlab-performance-hub/actions/artifacts/9752222645/zip' -o /tmp/v773-index.zip
+          mkdir -p /tmp/v773-index v773-recovery
+          unzip -q /tmp/v773-index.zip -d /tmp/v773-index
+          test -s /tmp/v773-index/index-safe.html
+          cp /tmp/v773-index/index-safe.html v773-recovery/index-safe.html
+          cp /tmp/v773-index/failed.txt v773-recovery/original-missing-assets.txt || true
+          printf 'saved-index artifact 9752222645\n' > v773-recovery/README.txt
+      - name: Commit recovered index
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'ARLAB V773 Recovery'
+          git config user.email 'actions@users.noreply.github.com'
+          git add v773-recovery
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Guardar índice exacto V773 recuperado'
+          git push
