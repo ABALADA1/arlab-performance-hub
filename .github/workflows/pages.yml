@@ -97,6 +97,108 @@ jobs:
           print('V710 preparada:', len(html), 'HTML,', len(css), 'CSS,', len(js), 'JS')
           PY
 
+      - name: Recover deployed V773 snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          OLD_STATIC='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
+          OLD_FN='https://xnlkjkrkkehplsbbziil.supabase.co/functions/v1/'
+          NEW_FN='https://wchzahvvujxxajlmxhqa.supabase.co/functions/v1/'
+          OUT='site/recovered-v773'
+          mkdir -p "$OUT"
+
+          curl -fL --retry 8 --retry-all-errors --connect-timeout 15 --max-time 120 \
+            "${OLD_STATIC}index-safe.html" -o /tmp/v773-index.html
+
+          # The safe state/player bridge is rebuilt from the deployed components,
+          # but points only persistence/sync calls to the new Free recovery backend.
+          curl -fL --retry 8 --retry-all-errors --connect-timeout 15 --max-time 120 \
+            "${OLD_FN}arlab-v699-state-patch?recovery=773" -o /tmp/v773-state.js
+          curl -fL --retry 8 --retry-all-errors --connect-timeout 15 --max-time 120 \
+            "${OLD_FN}arlab-v699-player-sync-patch?recovery=773" -o /tmp/v773-player-sync.js
+          cat /tmp/v773-state.js /tmp/v773-player-sync.js > "$OUT/arlab-v773-recovery-bridge.js"
+          sed -i "s#${OLD_FN}#${NEW_FN}#g" "$OUT/arlab-v773-recovery-bridge.js"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          from urllib.parse import urlsplit, unquote
+          import os, re, subprocess
+
+          old = 'https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
+          out = Path('site/recovered-v773')
+          html = Path('/tmp/v773-index.html').read_text(encoding='utf-8', errors='replace')
+
+          # Work from the exact deployed HTML but make its static dependencies local.
+          html = html.replace(old, './')
+          html = re.sub(r'<base\b[^>]*>', '', html, flags=re.I)
+          access = '''<script>
+          (function(){
+            try{
+              if(!sessionStorage.getItem('arlabCloudKey')){
+                var k=(window.prompt('ARLAB Cloud · Clave de acceso:')||'').trim();
+                if(k)sessionStorage.setItem('arlabCloudKey',k);
+              }
+            }catch(e){}
+          })();
+          </script>\n<script src="./arlab-v773-recovery-bridge.js"></script>\n'''
+          html = html.replace('<head>', '<head>\n<base href="./">\n' + access, 1)
+          html = html.replace('</head>', '<meta name="arlab-recovery" content="V773-deployed-snapshot">\n</head>', 1)
+          (out / 'index.html').write_text(html, encoding='utf-8')
+
+          refs = set()
+          for m in re.finditer(r'(?:src|href)\s*=\s*["\']([^"\']+)', html, flags=re.I):
+              v=m.group(1).strip()
+              if not v or v.startswith(('#','data:','blob:','javascript:','mailto:')): continue
+              if v.startswith(('http://','https://','//')): continue
+              refs.add(v)
+
+          def clean_ref(v):
+              p=urlsplit(v).path
+              p=unquote(p).lstrip('./').lstrip('/')
+              p=os.path.normpath(p).replace('\\','/')
+              if p.startswith('../') or p in ('','.'): return None
+              return p
+
+          downloaded=set()
+          def fetch_rel(rel):
+              rel=clean_ref(rel)
+              if not rel or rel in downloaded or rel=='arlab-v773-recovery-bridge.js': return False
+              downloaded.add(rel)
+              dest=out/rel
+              dest.parent.mkdir(parents=True,exist_ok=True)
+              url=old+rel
+              r=subprocess.run(['curl','-fL','--retry','6','--retry-all-errors','--connect-timeout','12','--max-time','90',url,'-o',str(dest)],stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
+              if r.returncode!=0:
+                  print('WARN missing',rel, r.stderr.strip()[-180:])
+                  try: dest.unlink()
+                  except: pass
+                  return False
+              return True
+
+          for ref in sorted(refs): fetch_rel(ref)
+
+          # CSS often contains icons/fonts/images not linked directly by HTML.
+          for _ in range(3):
+              additions=[]
+              for css in list(out.rglob('*.css')):
+                  txt=css.read_text(encoding='utf-8',errors='replace')
+                  base=css.relative_to(out).parent
+                  for m in re.finditer(r'url\(\s*["\']?([^\)"\']+)',txt,flags=re.I):
+                      v=m.group(1).strip()
+                      if not v or v.startswith(('data:','http://','https://','//','#')): continue
+                      additions.append(str((base / urlsplit(v).path).as_posix()))
+              before=len(downloaded)
+              for ref in additions: fetch_rel(ref)
+              if len(downloaded)==before: break
+
+          js_count=sum(1 for _ in out.rglob('*.js'))
+          css_count=sum(1 for _ in out.rglob('*.css'))
+          total=sum(1 for p in out.rglob('*') if p.is_file())
+          print('V773 recovered files:',total,'JS:',js_count,'CSS:',css_count)
+          if js_count < 50 or css_count < 10:
+              raise SystemExit(f'Recovery incomplete: JS={js_count} CSS={css_count}')
+          PY
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
@@ -119,3 +221,4 @@ jobs:
           curl -fsSIL "${{ steps.deployment.outputs.page_url }}" | head -20
           curl -fsSIL "${{ steps.deployment.outputs.page_url }}checkin/" | head -20
           curl -fsSIL "${{ steps.deployment.outputs.page_url }}emergency/" | head -20
+          curl -fsSIL "${{ steps.deployment.outputs.page_url }}recovered-v773/" | head -20
