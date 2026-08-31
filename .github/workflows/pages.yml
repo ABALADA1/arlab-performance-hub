@@ -29,7 +29,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf site
-          mkdir -p site/v710
+          mkdir -p site/v710 site/v779
           cp -R checkin site/checkin
           cp -R emergency site/emergency
           cp -R standalone-pro-x5 site/pro-x5
@@ -81,7 +81,85 @@ jobs:
           (out / 'index.html').write_text(html, encoding='utf-8')
           (out / 'v710' / 'arlab-v710.css').write_text(css, encoding='utf-8')
           (out / 'v710' / 'arlab-v710.js').write_text(js, encoding='utf-8')
-          print('Stable site + PRO X5 prepared')
+          print('Stable V710 + PRO X5 prepared')
+          PY
+
+          python3 - <<'PY'
+          from pathlib import Path
+          from concurrent.futures import ThreadPoolExecutor, as_completed
+          from urllib.request import Request, urlopen
+          from urllib.parse import quote
+          import json, re, time
+
+          STATUS = 'https://wchzahvvujxxajlmxhqa.supabase.co/functions/v1/arlab-v779-package?action=status'
+          WEB = 'https://wchzahvvujxxajlmxhqa.supabase.co/functions/v1/arlab-v779-web/'
+          OUT = Path('site/v779')
+          PREFIX = '/arlab-performance-hub/v779/'
+
+          def read_url(url, timeout=90):
+              last = None
+              for attempt in range(5):
+                  try:
+                      req = Request(url, headers={'User-Agent':'ARLAB-V779-Pages/1.0','Cache-Control':'no-cache'})
+                      with urlopen(req, timeout=timeout) as r:
+                          if r.status != 200:
+                              raise RuntimeError(f'HTTP {r.status} {url}')
+                          return r.read()
+                  except Exception as e:
+                      last = e
+                      time.sleep(0.5 * (attempt + 1))
+              raise last
+
+          status = json.loads(read_url(STATUS).decode('utf-8'))
+          cur = status.get('current') or {}
+          webroot = str(cur.get('webRoot') or '')
+          manifest = list(cur.get('manifest') or [])
+          if not webroot or not manifest:
+              raise RuntimeError('V779 no tiene webRoot/manifest instalado')
+
+          rels = []
+          for path in manifest:
+              if path.startswith(webroot):
+                  rel = path[len(webroot):]
+                  if rel:
+                      rels.append(rel)
+          rels = sorted(set(rels))
+          if 'index.html' not in rels:
+              raise RuntimeError('V779 no contiene index.html en wwwroot')
+
+          def fetch_one(rel):
+              url = WEB + quote(rel, safe='/._-~()[]@+') + '?pages=7793'
+              data = read_url(url, timeout=120)
+              dest = OUT / rel
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              dest.write_bytes(data)
+              return rel, len(data)
+
+          total = 0
+          done = 0
+          with ThreadPoolExecutor(max_workers=8) as ex:
+              futures = [ex.submit(fetch_one, rel) for rel in rels]
+              for f in as_completed(futures):
+                  rel, size = f.result()
+                  total += size
+                  done += 1
+                  if done % 50 == 0 or done == len(rels):
+                      print(f'V779: {done}/{len(rels)} archivos · {total/1024/1024:.1f} MB')
+
+          index = OUT / 'index.html'
+          html = index.read_text(encoding='utf-8')
+          # Cualquier recurso raíz debe quedarse dentro de /arlab-performance-hub/v779/.
+          html = re.sub(r'(\b(?:src|href)=(["\']))/(?!/)', lambda m: m.group(1) + PREFIX, html, flags=re.I)
+          # Fuerza una versión nueva para el router de importación ya parcheado online.
+          html = re.sub(r'arlab-v759-import-router\.js\?v=[^"\']+', 'arlab-v759-import-router.js?v=779online3', html, flags=re.I)
+          html = html.replace('</head>', '<meta name="arlab-online-build" content="V779-pages-7793"></head>', 1)
+          index.write_text(html, encoding='utf-8')
+
+          if not (OUT / 'arlab-v620-app.bundle.js').exists():
+              raise RuntimeError('Falta arlab-v620-app.bundle.js en V779')
+          if not (OUT / 'arlab-v779-persistence-watchdog.js').exists():
+              raise RuntimeError('Falta watchdog V779')
+          print(f'V779 completa preparada: {len(rels)} archivos, {total/1024/1024:.1f} MB')
           PY
 
       - name: Configure Pages
@@ -103,7 +181,9 @@ jobs:
         run: |
           set -e
           sleep 8
-          curl -fsSIL "${{ steps.deployment.outputs.page_url }}emergency/" | head -20
-          curl -fsSIL "${{ steps.deployment.outputs.page_url }}pro-x5/" | head -20
-          curl -fsSIL "${{ steps.deployment.outputs.page_url }}pro-x5/app.js" | head -20
-          curl -fsSIL "${{ steps.deployment.outputs.page_url }}pro-x5/style.css" | head -20
+          BASE="${{ steps.deployment.outputs.page_url }}"
+          curl -fsSIL "${BASE}v779/" | head -20
+          curl -fsSIL "${BASE}v779/arlab-v620-app.bundle.js?v=7791" | head -20
+          curl -fsSIL "${BASE}v779/arlab-v779-persistence-watchdog.js?v=7791" | head -20
+          curl -fsSL "${BASE}v779/" | grep -q 'V779-pages-7793'
+          echo 'V779 published and verified'
