@@ -1,0 +1,50 @@
+name: Probe V773 browser cache variants
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/rescue-v773-browser-cache.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe browser-like cached URLs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L -fsS -H "Authorization: Bearer ${GH_TOKEN}" -H 'Accept: application/vnd.github+json' \
+            'https://api.github.com/repos/ABALADA1/arlab-performance-hub/actions/artifacts/9752222645/zip' -o /tmp/rescue.zip
+          mkdir -p /tmp/rescue && unzip -q /tmp/rescue.zip -d /tmp/rescue
+          python3 - <<'PY'
+          import re, subprocess, pathlib, time
+          html=pathlib.Path('/tmp/rescue/index-safe.html').read_text('utf-8',errors='ignore')
+          base='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
+          index=base+'index-safe.html'
+          urls=[]
+          for m in re.finditer(r'(?:src|href)=["\']([^"\']+)["\']',html,re.I):
+              u=m.group(1).strip()
+              if u.startswith(base): full=u
+              elif re.match(r'^[A-Za-z0-9_.\-/]+\.(?:js|css)(?:\?.*)?$',u,re.I): full=base+u
+              else: continue
+              if full not in urls: urls.append(full)
+          ok=[]
+          for i,u in enumerate(urls[:40],1):
+              css='.css' in u.split('?',1)[0].lower()
+              dest='style' if css else 'script'
+              accept='text/css,*/*;q=0.1' if css else '*/*'
+              cmd=['curl','-L','--compressed','--connect-timeout','5','--max-time','10','-sS','-o','/tmp/asset','-w','%{http_code} %{size_download}',
+                   '-H','User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151 Safari/537.36',
+                   '-H',f'Accept: {accept}','-H','Accept-Language: es-ES,es;q=0.9,en;q=0.8','-H',f'Referer: {index}',
+                   '-H',f'Sec-Fetch-Dest: {dest}','-H','Sec-Fetch-Mode: no-cors','-H','Sec-Fetch-Site: same-origin',u]
+              p=subprocess.run(cmd,capture_output=True,text=True); out=p.stdout.strip(); name=u.split('/')[-1]
+              print(i,out,name)
+              if out.startswith('200 '): ok.append(name)
+              time.sleep(.12)
+          print('BROWSER_PROBE_OK',len(ok),'OF',min(40,len(urls)))
+          print('OK_NAMES',*ok,sep='\n')
+          PY
