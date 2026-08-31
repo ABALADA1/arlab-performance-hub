@@ -1,0 +1,38 @@
+name: Probe V773 exact cache keys
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/rescue-v773-cache-keys.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe exact versioned asset URLs
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
+          curl -L --connect-timeout 10 --max-time 30 -fsS -o /tmp/index "${BASE}index-safe.html"
+          python3 - <<'PY'
+          import re, subprocess, pathlib
+          html=pathlib.Path('/tmp/index').read_text('utf-8',errors='ignore')
+          base='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
+          urls=[]
+          for m in re.finditer(r'(?:src|href)=["\']([^"\']+)["\']',html,re.I):
+              u=m.group(1).strip()
+              if u.startswith(base): full=u
+              elif re.match(r'^[A-Za-z0-9_.\-/]+\.(?:js|css)(?:\?.*)?$',u,re.I): full=base+u
+              else: continue
+              if full not in urls: urls.append(full)
+          print('TOTAL_REFS',len(urls))
+          ok=0
+          for i,u in enumerate(urls[:40],1):
+              p=subprocess.run(['curl','-L','--connect-timeout','6','--max-time','12','-sS','-o','/tmp/asset','-w','%{http_code} %{size_download}',u],capture_output=True,text=True)
+              out=p.stdout.strip()
+              print(i,out,u.split('/')[-1])
+              if out.startswith('200 '): ok+=1
+          print('PROBE_OK',ok,'OF',min(40,len(urls)))
+          PY
