@@ -1,11 +1,86 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>ARLAB V779</title><style>html,body{margin:0;width:100%;height:100%;background:#f4f7fb;font-family:Inter,system-ui,Segoe UI,Arial;color:#17324f}#boot{position:fixed;inset:0;display:grid;place-items:center}.card{background:#fff;border:1px solid #dfe7f1;border-radius:16px;padding:24px 28px;box-shadow:0 12px 36px rgba(18,54,93,.08);text-align:center;min-width:300px}.card b{display:block;font-size:18px;margin-bottom:8px}.muted{color:#60758c}</style></head><body><div id="boot"><div class="card"><b>Cargando ARLAB V779…</b><span class="muted">Conectando los archivos instalados</span></div></div><script>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>ARLAB V779</title><style>html,body{margin:0;width:100%;height:100%;background:#f4f7fb;font-family:Inter,system-ui,Segoe UI,Arial;color:#17324f}#boot{position:fixed;inset:0;display:grid;place-items:center}.card{background:#fff;border:1px solid #dfe7f1;border-radius:16px;padding:24px 28px;box-shadow:0 12px 36px rgba(18,54,93,.08);text-align:center;min-width:320px}.card b{display:block;font-size:18px;margin-bottom:8px}.muted{color:#60758c}.bar{width:180px;height:5px;margin:14px auto 0;border-radius:99px;background:#dce6f3;overflow:hidden}.bar:after{content:"";display:block;width:45%;height:100%;border-radius:99px;background:#0d5bd7;animation:x .8s ease-in-out infinite alternate}@keyframes x{from{transform:translateX(-20%)}to{transform:translateX(145%)}}</style></head><body><div id="boot"><div class="card"><b>Cargando ARLAB V779…</b><span class="muted">Abriendo el paquete original y conectando la BBDD online</span><div class="bar"></div></div></div><script>
 (async()=>{
- const WEB='https://wchzahvvujxxajlmxhqa.supabase.co/functions/v1/arlab-v779-web/';
- const esc=s=>String(s).replace(/<\/script/gi,'<\\/script');
- const BRIDGE=`<script>(()=>{try{const WEB=${JSON.stringify('https://wchzahvvujxxajlmxhqa.supabase.co/functions/v1/arlab-v779-web/')};const nativeFetch=window.fetch.bind(window);window.ARLAB_DATA_STORE_ORIGIN=WEB.replace(/\\/$/,'');window.ARLAB_V779_ONLINE=true;window.fetch=async(input,init)=>{try{const src=typeof input==='string'?input:input?.url||String(input);const u=new URL(src,document.baseURI);const method=String(init?.method||(input&&input.method)||'GET').toUpperCase();if((u.hostname==='127.0.0.1'||u.hostname==='localhost'||u.pathname==='/api/state'||u.pathname.endsWith('/api/state'))){let body=init?.body;if(body==null&&input instanceof Request&&(method==='POST'||method==='PUT'))body=await input.clone().text();return nativeFetch(WEB+'__state',{...init,method,headers:{...(init?.headers||{}),'content-type':'application/json'},body})}if(u.pathname==='/api/health'||u.pathname.endsWith('/api/health'))return nativeFetch(WEB+'__meta',{cache:'no-store'});return nativeFetch(input,init)}catch{return nativeFetch(input,init)}};const O=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,url,...rest){try{const u=new URL(url,document.baseURI);if(u.hostname==='127.0.0.1'||u.hostname==='localhost'||u.pathname==='/api/state'||u.pathname.endsWith('/api/state'))url=WEB+'__state';else if(u.pathname==='/api/health'||u.pathname.endsWith('/api/health'))url=WEB+'__meta'}catch{}return O.call(this,m,url,...rest)};if(navigator.serviceWorker&&navigator.serviceWorker.register)navigator.serviceWorker.register=async()=>({scope:location.origin+'/'});}catch(e){console.warn('ARLAB V779 bridge',e)}})();<\/script>`;
- const r=await fetch(WEB,{cache:'no-store'});if(!r.ok)throw new Error('No se pudo cargar V779: HTTP '+r.status);let html=await r.text();
- html=html.replace(/<head([^>]*)>/i,`<head$1><base href="${WEB}">${BRIDGE}`);
- html=html.replace(/\b(src|href)=(['"])\/(?!\/)/gi,(m,a,q)=>`${a}=${q}${WEB}`);
- document.open();document.write(html);document.close();
-})().catch(e=>{document.getElementById('boot').innerHTML='<div class="card"><b>No se pudo iniciar V779</b><span class="muted">'+String(e.message||e)+'</span></div>';console.error(e)});
+  const WEB='https://wchzahvvujxxajlmxhqa.supabase.co/functions/v1/arlab-v779-web/';
+  const PACKAGE='https://wchzahvvujxxajlmxhqa.supabase.co/functions/v1/arlab-v779-package?action=file&path=ARLAB.ValdHub/wwwroot/index.html';
+  const BASE=WEB.endsWith('/')?WEB.slice(0,-1):WEB;
+  const bridge=`<script id="arlab-v779-online-bridge-fixed">(()=>{
+    const WEB=${JSON.stringify('https://wchzahvvujxxajlmxhqa.supabase.co/functions/v1/arlab-v779-web/')};
+    const BASE=WEB.endsWith('/')?WEB.slice(0,-1):WEB;
+    window.ARLAB_V779_ONLINE=true;
+    window.ARLAB_V779_ONLINE_BASE=BASE;
+    window.ARLAB_V779_API_ORIGIN=BASE;
+    window.ARLAB_DATA_STORE_PORT='';
+    try{
+      Object.defineProperty(window,'ARLAB_DATA_STORE_ORIGIN',{configurable:true,get:()=>BASE,set:()=>{}});
+      Object.defineProperty(window,'ARLAB_JSON_STORE_ORIGIN',{configurable:true,get:()=>BASE,set:()=>{}});
+    }catch{
+      window.ARLAB_DATA_STORE_ORIGIN=BASE;
+      window.ARLAB_JSON_STORE_ORIGIN=BASE;
+    }
+    try{
+      const u=new URL(location.href);
+      for(const k of ['dataport','importport','gpsguardport']) if(!u.searchParams.get(k)) u.searchParams.set(k,'5188');
+      history.replaceState(null,'',u.href);
+    }catch{}
+    const nativeFetch=window.fetch.bind(window);
+    const mapUrl=(raw)=>{
+      try{
+        const value=typeof raw==='string'?raw:(raw&&raw.url)||String(raw);
+        const u=new URL(value,location.href);
+        const p=u.pathname||'';
+        const local=u.hostname==='127.0.0.1'||u.hostname==='localhost';
+        const same=u.origin===location.origin;
+        if((local||same)&&(p.startsWith('/api/')||p==='/api/state'||p==='/api/health')) return WEB+p.slice(1)+u.search;
+        if(same&&p!=='/'&&p!=='/index.html') return WEB+p.replace(/^\\/+/, '')+u.search;
+        if(u.hostname==='xnlkjkrkkehplsbbziil.supabase.co'&&u.pathname.includes('/functions/v1/')){
+          const action=u.searchParams.get('action')||'';
+          if(action==='health'||action==='write-health') return WEB+'api/health';
+          if(action==='state-meta') return WEB+'api/state/meta';
+        }
+        return null;
+      }catch{return null;}
+    };
+    window.fetch=function(input,init){
+      const mapped=mapUrl(input);
+      if(!mapped) return nativeFetch(input,init);
+      try{
+        if(input instanceof Request&&!init) return nativeFetch(new Request(mapped,input));
+        return nativeFetch(mapped,init);
+      }catch{return nativeFetch(mapped,init);}
+    };
+    const oldOpen=XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open=function(method,url,...rest){
+      const mapped=mapUrl(url);
+      return oldOpen.call(this,method,mapped||url,...rest);
+    };
+    try{
+      if(navigator.serviceWorker?.register){
+        navigator.serviceWorker.register=async()=>({scope:location.origin+'/',active:null,installing:null,waiting:null,update:async()=>{},unregister:async()=>true});
+      }
+    }catch{}
+    const show=(title,detail)=>{try{
+      let n=document.getElementById('arlab-v779-runtime-error');
+      if(!n){n=document.createElement('div');n.id='arlab-v779-runtime-error';n.style.cssText='position:fixed;z-index:2147483647;right:12px;bottom:12px;max-width:760px;background:#fff0f0;color:#8a1f1f;border:1px solid #e4a5a5;border-radius:12px;padding:12px 14px;font:13px/1.4 system-ui;box-shadow:0 8px 30px #0002';document.body&&document.body.appendChild(n)}
+      const esc=s=>String(s||'').replace(/[&<>]/g,c=>c==='&'?'&amp;':c==='<'?'&lt;':'&gt;');
+      n.innerHTML='<b>'+esc(title)+'</b><br><span>'+esc(detail)+'</span>';
+    }catch{}};
+    addEventListener('error',e=>show('Error de arranque V779',(e.message||'Error')+' · '+(e.filename||'')+':'+(e.lineno||'')));
+    addEventListener('unhandledrejection',e=>show('Error asíncrono V779',e.reason?.message||String(e.reason||'')));
+    setTimeout(()=>{try{const c=document.getElementById('content');if(c&&!c.textContent.trim())show('ARLAB V779 no terminó de arrancar','El contenido principal sigue vacío después de 15 segundos.');}catch{}},15000);
+  })();<\/script>`;
+
+  const r=await fetch(PACKAGE+'&v=7803',{cache:'no-store'});
+  if(!r.ok) throw new Error('No se pudo leer el index original de V779: HTTP '+r.status);
+  let html=await r.text();
+  if(!html.includes('arlab-v779-persistence-watchdog.js')) throw new Error('El paquete recibido no corresponde a V779');
+  html=html.replace('<script src="arlab-v728-offline-cloud.js?v=7660" defer></script>','');
+  html=html.replace('<script src="arlab-v728-offline-cloud.js?v=7520" defer></script>','');
+  html=html.replace('arlab-v759-import-router.js?v=7590','arlab-v759-import-router.js?v=7803');
+  html=html.replace(/<head([^>]*)>/i,`<head$1><base href="${WEB}">${bridge}`);
+  document.open();document.write(html);document.close();
+})().catch(e=>{
+  const boot=document.getElementById('boot');
+  if(boot) boot.innerHTML='<div class="card"><b>No se pudo iniciar V779</b><span class="muted">'+String(e&&e.message?e.message:e)+'</span></div>';
+  console.error(e);
+});
 </script></body></html>
