@@ -1,0 +1,35 @@
+name: Desbloquear ARLAB V779
+
+on:
+  push:
+    paths:
+      - '.github/workflows/disable-v779-protection.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  disable-vercel-auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_Bca78hll9T2daT5yLGL7P5ik
+      VERCEL_PROJECT_ID: prj_8wkc20TQmKvxV9vkpPgEvPiU7iFX
+    steps:
+      - name: Comprobar credencial existente
+        shell: bash
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "VERCEL_TOKEN no está configurado en GitHub Actions"
+            exit 78
+          fi
+      - name: Desactivar Vercel Authentication en V779
+        shell: bash
+        run: |
+          npx --yes vercel@latest project protection disable arlab-v779-online --sso --token="$VERCEL_TOKEN"
+      - name: Comprobar protección
+        shell: bash
+        run: |
+          npx --yes vercel@latest project protection arlab-v779-online --format=json --token="$VERCEL_TOKEN"
