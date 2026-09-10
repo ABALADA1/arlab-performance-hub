@@ -1,0 +1,86 @@
+name: Build ARLAB Local PC ZIP
+
+on:
+  push:
+    branches:
+      - local-pc-package
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build local package
+        shell: bash
+        run: |
+          set -e
+          rm -rf ARLAB_LOCAL_PC
+          mkdir -p ARLAB_LOCAL_PC
+          cp standalone-pro-x5/index.html ARLAB_LOCAL_PC/index.html
+          cp standalone-pro-x5/app.js ARLAB_LOCAL_PC/app.js
+          cp standalone-pro-x5/style.css ARLAB_LOCAL_PC/style.css
+          cat > ARLAB_LOCAL_PC/manifest.json <<'EOF'
+          {
+            "name": "ARLAB Performance Hub Local",
+            "short_name": "ARLAB Local",
+            "start_url": "./index.html",
+            "display": "standalone",
+            "background_color": "#edf5ff",
+            "theme_color": "#062b55"
+          }
+          EOF
+          cat > ARLAB_LOCAL_PC/ABRIR_ARLAB.bat <<'EOF'
+          @echo off
+          cd /d "%~dp0"
+          echo Iniciando ARLAB Local...
+          where py >nul 2>&1
+          if %errorlevel%==0 (
+            start "" http://127.0.0.1:8765/
+            py -m http.server 8765 --bind 127.0.0.1
+            exit /b
+          )
+          where python >nul 2>&1
+          if %errorlevel%==0 (
+            start "" http://127.0.0.1:8765/
+            python -m http.server 8765 --bind 127.0.0.1
+            exit /b
+          )
+          echo Python no esta instalado. Abriendo directamente index.html...
+          start "" index.html
+          pause
+          EOF
+          cat > ARLAB_LOCAL_PC/CERRAR_SERVIDOR.bat <<'EOF'
+          @echo off
+          echo Cierra la ventana negra de ABRIR_ARLAB para detener el servidor local.
+          pause
+          EOF
+          cat > ARLAB_LOCAL_PC/LEEME_PRIMERO.txt <<'EOF'
+          ARLAB LOCAL PC
+          ==============
+
+          1) Descomprime este ZIP en una carpeta normal de Windows.
+          2) Haz doble clic en ABRIR_ARLAB.bat.
+          3) Se abrira ARLAB en http://127.0.0.1:8765/
+          4) Deja abierta la ventana negra mientras uses la aplicacion.
+
+          DATOS
+          - Esta edicion funciona en local y guarda sus datos en el almacenamiento local del navegador.
+          - No depende de Supabase, Nhost, Railway, Cloudflare ni Backblaze para arrancar.
+          - Haz copias/exportaciones de tus datos antes de limpiar los datos del navegador.
+
+          IMPORTANTE
+          - Este paquete corresponde a la edicion standalone completa disponible en el repositorio de recuperacion de ARLAB.
+          - Los ultimos hotfix online que quedaron almacenados exclusivamente en el Supabase restringido no pueden extraerse mientras el servicio siga bloqueado.
+          EOF
+          zip -r ARLAB_LOCAL_PC.zip ARLAB_LOCAL_PC
+      - name: Upload ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: ARLAB_LOCAL_PC
+          path: ARLAB_LOCAL_PC.zip
+          if-no-files-found: error
+          compression-level: 0
