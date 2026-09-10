@@ -1,0 +1,78 @@
+name: Build ARLAB Latest Recovery Kit
+
+on:
+  push:
+    branches: [local-pc-package]
+    paths:
+      - 'tools/recover-latest/**'
+      - '.github/workflows/build-latest-recovery-kit.yml'
+      - 'recovery-kit-trigger.txt'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+
+      - name: Build local ARLAB server
+        shell: pwsh
+        run: |
+          go build -trimpath -ldflags '-s -w' -o tools/recover-latest/arlab-local-server.exe ./tools/recover-latest/server
+
+      - name: Build Brotli decoder
+        shell: pwsh
+        working-directory: tools/recover-latest/brotli
+        run: |
+          if (!(Test-Path go.mod)) { go mod init arlab-brotli }
+          go get github.com/andybalholm/brotli@v1.2.0
+          go build -trimpath -ldflags '-s -w' -o ../arlab-brotli.exe .
+
+      - name: Prepare fallback and fix Windows script
+        shell: pwsh
+        run: |
+          Copy-Item v773-recovery/index-safe.html tools/recover-latest/fallback-index-safe.html -Force
+          $p='tools/recover-latest/RECUPERAR_ULTIMA_ARLAB.ps1'
+          $s=Get-Content -LiteralPath $p -Raw
+          $s=$s.Replace('$score=[int64]([DateTimeOffset]$mtime).ToUnixTimeSeconds()','$score=[int64](([DateTimeOffset]$mtime).ToUnixTimeSeconds())')
+          $s=$s.Replace('$html=[regex]::Replace($html,''(?is)<head\b[^>]*>'',''$0<script src="arlab-local-bridge.js"></script>'',1)','$html=([regex]''(?is)<head\b[^>]*>'').Replace($html,''$0<script src="arlab-local-bridge.js"></script>'',1)')
+          $s=$s.Replace('''@echo off`r`ncd /d "%~dp0"`r`nstart "ARLAB LOCAL" "%~dp0ARLAB_LOCAL.exe"`r`n'' | Set-Content -Encoding ASCII (Join-Path $Out ''ABRIR_ARLAB_LOCAL.bat'')','@(''@echo off'',''cd /d "%~dp0"'',''start "ARLAB LOCAL" "%~dp0ARLAB_LOCAL.exe"'') | Set-Content -Encoding ASCII (Join-Path $Out ''ABRIR_ARLAB_LOCAL.bat'')')
+          Set-Content -LiteralPath $p -Value $s -Encoding UTF8
+          [scriptblock]::Create((Get-Content -LiteralPath $p -Raw)) | Out-Null
+          Write-Host 'PowerShell recovery script syntax OK'
+
+      - name: Build recovery kit ZIP
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/ARLAB_RECUPERAR_ULTIMA_REAL | Out-Null
+          Copy-Item tools/recover-latest/RECUPERAR_ULTIMA_ARLAB.bat dist/ARLAB_RECUPERAR_ULTIMA_REAL/
+          Copy-Item tools/recover-latest/RECUPERAR_ULTIMA_ARLAB.ps1 dist/ARLAB_RECUPERAR_ULTIMA_REAL/
+          Copy-Item tools/recover-latest/arlab-local-bridge.js dist/ARLAB_RECUPERAR_ULTIMA_REAL/
+          Copy-Item tools/recover-latest/arlab-local-server.exe dist/ARLAB_RECUPERAR_ULTIMA_REAL/
+          Copy-Item tools/recover-latest/arlab-brotli.exe dist/ARLAB_RECUPERAR_ULTIMA_REAL/
+          Copy-Item tools/recover-latest/fallback-index-safe.html dist/ARLAB_RECUPERAR_ULTIMA_REAL/
+          @'
+          ARLAB · RECUPERAR ÚLTIMA VERSIÓN REAL
+
+          Este paquete NO contiene la edición antigua standalone.
+          Recupera de Chrome/Edge los JS/CSS/HTML reales que tu PC usó con ARLAB antes del bloqueo de Supabase.
+
+          USO:
+          1. Cierra Chrome y Edge completamente.
+          2. Ejecuta RECUPERAR_ULTIMA_ARLAB.bat.
+          3. Al terminar abre RECUPERADO\ABRIR_ARLAB_LOCAL.bat.
+          4. Se genera además ARLAB_ULTIMA_RECUPERADA.zip.
+
+          No se suben datos. Solo se filtran entradas de caché asociadas a ARLAB.
+          '@ | Set-Content -Encoding UTF8 dist/ARLAB_RECUPERAR_ULTIMA_REAL/LEEME_PRIMERO.txt
+          Compress-Archive -Path dist/ARLAB_RECUPERAR_ULTIMA_REAL -DestinationPath dist/ARLAB_RECUPERAR_ULTIMA_REAL.zip -CompressionLevel Optimal -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ARLAB_RECUPERAR_ULTIMA_REAL
+          path: dist/ARLAB_RECUPERAR_ULTIMA_REAL.zip
+          retention-days: 30
