@@ -1,0 +1,24 @@
+name: Deploy ARLAB to Nhost
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: nhost-actions/install-nhost-cli@v1
+
+      - uses: nhost-actions/authenticate@v1
+        with:
+          pat: ${{ secrets.NHOST_PAT }}
+
+      - uses: nhost-actions/deploy@v1
+        with:
+          subdomain: ${{ secrets.NHOST_SUBDOMAIN }}
+          git_ref: ${{ github.sha }}
+          message: 'Deploy ARLAB Nhost migration'
