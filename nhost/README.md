@@ -6,8 +6,9 @@ Esta rama prepara Nhost como sustituto de Supabase para ARLAB.
 
 - Frontend: Vercel (`arlab-app.vercel.app`).
 - Backend: Nhost (Postgres + Hasura GraphQL + Auth + Storage + Functions).
-- Estado ARLAB: retención fija `current`, `last-good`, `previous-1`, `previous-2`.
-- GPS y archivos pesados: Nhost Storage, buckets `arlab-gps` y `arlab-data`.
+- Estado ARLAB: los JSON grandes viven en Nhost Storage (`arlab-data`); Postgres guarda solo metadata ligera.
+- Retención fija del estado: `current`, `last-good`, `previous-1`, `previous-2`.
+- GPS y archivos pesados: Nhost Storage, bucket `arlab-gps`.
 - No se migran los `autosave-backups/**` antiguos que llenaron Supabase.
 
 ## Conectar el proyecto Nhost a este repositorio
@@ -30,4 +31,4 @@ Tras el primer deploy, comprobar:
 - tablas `public.arlab_state_snapshots` y `public.arlab_gps_manifest`
 - buckets `arlab-data` y `arlab-gps`
 
-No hacer el corte de Vercel hasta importar el estado actual y verificar lectura/escritura.
+No hacer el corte de Vercel hasta importar el estado actual y verificar lectura/escritura. El proxy de Vercel seguirá apuntando al origen antiguo hasta que Nhost tenga una copia válida del estado y GPS.
