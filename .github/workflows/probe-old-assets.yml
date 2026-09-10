@@ -1,0 +1,37 @@
+name: Probe recoverable ARLAB production assets
+on:
+  push:
+    branches: [local-pc-package]
+    paths: ['.github/workflows/probe-old-assets.yml','probe-old-assets-trigger.txt']
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe old public storage
+        shell: bash
+        run: |
+          set -u
+          BASE='https://xnlkjkrkkehplsbbziil.supabase.co/storage/v1/object/public/arlab-v699-static/'
+          files=(
+            index-safe.html
+            arlab-v617-all.css
+            arlab-v779-stability-core.css
+            arlab-v138-bundle.js
+            macro-v150-v90-verificada.js
+            arlab-v424-macro-planes.js
+            arlab-v425-macro-stable.js
+            arlab-v434-macro-fast-comments-availability.js
+            arlab-v728-cloud-native-pre.js
+            arlab-v679-json-store-router.js
+            arlab-v759-import-router.js
+            arlab-v773-micro-dashboard.css
+            arlab-v774-week-typology-task-types.css
+            arlab-v777-week-typology-responsive.css
+            arlab-v779-persistence-watchdog.js
+          )
+          for f in "${files[@]}"; do
+            out=$(curl -L --compressed --connect-timeout 5 --max-time 15 -sS -o /tmp/a -w '%{http_code} %{size_download}' "$BASE$f" || true)
+            echo "$f $out"
+          done
