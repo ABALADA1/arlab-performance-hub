@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "arlab-free-backend",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-10",
+  "workers_dev": true,
+  "vars": {
+    "ARLAB_MAX_STATE_BYTES": "100000000",
+    "ARLAB_MIN_STATE_BYTES": "2000000"
+  }
+}
