@@ -5,10 +5,12 @@
   "type": "module",
   "engines": { "node": ">=22" },
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "migrate:supabase": "node migrate-supabase-to-railway.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.883.0",
+    "@supabase/supabase-js": "^2.57.0",
     "cors": "^2.8.5",
     "express": "^5.1.0"
   }
