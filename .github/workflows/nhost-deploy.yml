@@ -2,13 +2,6 @@ name: Deploy ARLAB to Nhost
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - nhost-migration
-    paths:
-      - 'nhost/**'
-      - 'functions/**'
-      - '.github/workflows/nhost-deploy.yml'
 
 jobs:
   deploy:
