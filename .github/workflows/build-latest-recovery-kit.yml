@@ -21,8 +21,10 @@ jobs:
 
       - name: Build local ARLAB server
         shell: pwsh
+        working-directory: tools/recover-latest/server
         run: |
-          go build -trimpath -ldflags '-s -w' -o tools/recover-latest/arlab-local-server.exe ./tools/recover-latest/server
+          if (!(Test-Path go.mod)) { go mod init arlab-local-server }
+          go build -trimpath -ldflags '-s -w' -o ../arlab-local-server.exe .
 
       - name: Build Brotli decoder
         shell: pwsh
